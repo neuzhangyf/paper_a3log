@@ -1,0 +1,305 @@
+\section{A3 Theory}
+\label{sec:async}
+In this section, we first formally define asynchronous aggregation and introduce accumulated recursive program. We then present how A3 addresses the three concerns of asynchronous aggregation.
+
+%We present the conditions for asynchronous aggregation to guarantee the correctness in Sec. \ref{sec:async:condition}, discuss the possibilities to convert Sec. \ref{sec:async:convert} schedule asynchronous aggregations to achieve the optimal performance (Sec. \ref{sec:async:pri}), and propose to automatically asynchronize a synchronous program (Sec. \ref{sec:async:autoasync}).
+
+
+\subsection{Asynchronous Aggregation}
+\label{sec:async:async}
+
+The recursive program in Equation (\ref{eq:recursive2}) is defined with synchronous aggregation. In parallel or distributed computing, the \emph{synchronous} aggregation means that all the parallel $f()$ operations have to be completed before the next $g()$ operation starts. The $g()$ operation has to be applied on the whole set $X^k$. Correspondingly, we define asynchronous aggregation as follows.
+
+%As stated in Sec. \ref{sec:intro}, the aggregation is the root reason of low efficiency in parallel/distributed computing, and the recursive aggregation suffers the most due to the many times of synchronizations.
+
+\begin{definition}
+\label{def:asyncaggre}
+(\textbf{Asynchronous Aggregation}) In a recursive program, we assume that the set $X^k$ from any $k$th recursion is partitioned into $m$ disjoint subsets, i.e., $X^k=\{X_1^k,X_2^k,\ldots,X_m^k\}$, and $\forall i,j, X_i^k\cap X_j^k=\emptyset$. Asynchronous aggregation is to aggregate multiple subsets from different recursions, i.e., $g(X_i^k\cup X_j^{l})$ where $k\neq l$.
+\end{definition}
+
+From the definition of recursive aggregation as shown in Equation (\ref{eq:recursive2}), $X^{k+1}$ is resulted from $x^k$, and $x^k$ is resulted from $X^k$. $X^{k+1}$ does not exist before applying $g()$ on the complete set of $X^k$. Thus, the asynchronous aggregation $g(X_i^k\cup X_j^{k+1})$ is only possible after $X^{k+1}$ is obtained. In other words, $X^{k+1}$ is a \emph{replacement} of $X^k$ and is closer to the final result. The asynchronous aggregation of $X^{k+1}$ and $X^k$ may result in a wrong result since $X^k$ is a replaced result which is not supposed to be aggregated.
+
+
+\Paragraph{Semi-asynchronous} The asynchronous aggregation is possible for the group-by aggregation which contains multiple sub-aggregations, each associated with a group. Suppose a set of sub-aggregation results $x_i^{k}$ only depend on a subset of $X^k$, i.e., $x_i^{k}=g(X_i^{k})$ where $X_i^{k}$ is a subset of $X^k$. As long as the subset $X_i^{k}$ (but not necessarily the whole $X^k$) is available, the aggregation $g_k(X_i^{k})$ can be performed to obtain $x_i^{k}$ without waiting for the other subsets $X_j^{k}$ ($j\neq i$). However strictly speaking, this is not asynchronous aggregation because it is not an aggregation over multiple recursions' results. The computation can proceed with $x_i^{k}$ and further obtain $X_i^{k+1}$ after applying $f()$ operation. Similarly, $X_i^{k+2}$ can be obtained as long as their dependencies are available. We refer to this sort of dependency-based asynchronous aggregation as \emph{semi-asynchronous} aggregation. Semi-asynchronous aggregation can guarantee the correctness and is shown better performance in some use cases \cite{Low:2012:DGF:2212351.2212354, Shun:2015:SRP:2722129.2722159}. However, the asynchrony is still limited by the dependency scope.
+
+%For example, GraphLab \cite{Low:2012:DGF:2212351.2212354} relies on semi-asynchronous execution and achieves better performance for
+
+
+\subsection{Accumulated Recursive Program}
+\label{sec:async:accrec}
+
+In order to make asynchronous aggregation feasible, we introduce a particular type of recursive programs.
+
+\begin{definition}
+\label{def:accumasync}
+(\textbf{Accumulated Recursive Program}) Accumulated recursive program is represented as follows.
+\begin{equation}\label{eq:accumasync}
+\begin{aligned}
+\Delta X^{k+1}&=f(\Delta x^k),\\
+\Delta x^{k+1}&=g(\Delta X^{k+1}).
+\end{aligned}
+\end{equation}
+It starts from $\Delta x^0=x^0$ and terminates when $\Delta x^k$ is 0 or small enough. The final result is the aggregation of all intermediate results, i.e., $x^{k+1}=g(\Delta x^{0},\Delta x^{1},\ldots,\Delta x^{k+1})$. Alternatively, the result can be represented as follows.
+\begin{equation}
+\label{eq:accumasyncres}
+g\Big(\Delta X^0\cup (f\circ g)(\Delta X^0)\cup\ldots\cup (f\circ g)^k(\Delta X^0)\Big).
+\end{equation}
+\end{definition}
+
+Intuitively, the accumulated recursive program performs the same computation as normal recursive program, but the final result is the aggregation of all the intermediate results as shown in Equation (\ref{eq:accumasyncres}). The asynchronous aggregation becomes meaningful in accumulated recursive programs, since the final result is the \emph{aggregation} of all recursions' results but not the last recursion's result. Note that, $\Delta X^{k}$ represents the \emph{increment} from previous recursion. This implies that the accumulated recursive program exhibits \textbf{monotonicity}, which has been well studied in the literature \cite{Hellerstein:2010:DIE:1860702.1860704,calm,Lam:2013:SDE:2510649.2511289,Wang:2015:AFR:2824032.2824052}. Briefly speaking, monotonicity means that we only add information, never negate or take away. However, not all recursive programs are monotonic. We have the following theorem to guide the transformation.
+
+\begin{theorem}
+\label{th:monotone}
+(\textbf{Monotonizability}) The accumulated recursive program defined in Equation (\ref{eq:accumasync}) will return the same result as the normal recursive program defined in Equation (\ref{eq:recursive2}), as long as the the following conditions are satisfied.
+\begin{itemize}
+  \item \textbf{monotonic}: $X\subseteq f\circ g(X)$;
+  \item \textbf{accumulative}: $g(X_1\cup X_2)=g(g(X_1)\cup X_2)$;
+  \item \textbf{commutative}: $g(X_1\cup X_2)=g(X_2\cup X_1)$;
+\end{itemize}
+\end{theorem}
+
+We provide the formal proof in Appendix Sec. \ref{sec:app:proof:monotone}. The accumulative property is essential for efficiency. If the accumulative condition is satisfied, only the aggregation result $x^k=g(\Delta x^{0},\ldots,\Delta x^{k})$ needs to be maintained and is updated by accumulating a new $\Delta x^{k+1}$, i.e., $x^{k+1}=g(x^k,\Delta x^{k+1})$. Otherwise, the large set $\Delta X^{k}$ needs to be maintained for every recursion $k$. The accumulative property will be used in our system design to save a lot of maintaining cost.
+
+For example, the SSSP computation (Example 1) can be executed as an accumulated recursive program. Its non-aggregate operation $f()$ on node $i$ outputs not only the tuples set $\{\langle j,td_j^{k+1}\rangle\}$ for its outgoing neighbors $j$ but also its previous recursion's aggregation result $\langle i,d_i^k\rangle$. That is, $\{\langle i,td_i^{k+1}\rangle\}$ and $\langle i,d_i^k\rangle$ are contained in $X^{k+1}$, while $\langle i,d_i^k\rangle$ is already contained in $X^{k}$. Hence, $X^{k}\subseteq X^{k+1}$ and the monotonic condition is satisfied. In addition, the aggregate operation $g()$ which is MIN has the accumulative and commutative conditions.
+
+
+\subsection{Conditions for Asynchronous Aggregation}
+\label{sec:async:condition}
+
+As discussed, asynchronous aggregation is possible in accumulated recursive programs. However, not all accumulated recursive programs with asynchronous aggregation will return the same result as that with synchronous aggregation. We demonstrate the sufficient conditions for asynchronous aggregation in the following theorem.
+
+\begin{theorem}
+\label{th:async}
+(\textbf{Asynchronizability}) With asynchronous aggregation, an accumulated recursive program will yield to the same result as with synchronous aggregation, as long as the following order independent condition is satisfied.
+\begin{itemize}
+  \item \textbf{order independent}: $g\circ f\circ g(X)=g\circ f(X)$;
+\end{itemize}
+\end{theorem}
+
+By asynchronous aggregation, the partial aggregation result is immediately used by the next $f()$ operation. The order independent property implies that no matter the $f()$ operation is first applied or the $g()$ operation is first applied, the effect is the same. As long as the same number of $f()$ operations are applied on all data, the eventual aggregation result will be the same. The detailed proof is provided in Appendix Sec. \ref{sec:app:proof:async}.
+
+
+For the SSSP example, the $f()$ operation expands the BFS searching scope to one-hop-away nodes, and the $g()$ operation picks the minimal distance resulted from the shortest path. The shortest distances are the same no matter making expansion first $g\circ f(X)$ or making aggregation first $f\circ g(X)$, i.e., $min_j(d_j+w)=min_j(d_j)+w$. There are a broad class of computations that satisfy these conditions and can be executed asynchronously (13 programs in Appendix Sec. \ref{sec:app:example}).
+
+\subsection{Conversion Possibilities}
+\label{sec:async:convert}
+
+Some non-monotonic computations cannot be written as accumulated recursive program and are not originally qualified for asynchronous aggregation. For example, the PageRank computation cannot be executed as an accumulated recursive program since neither the monotonic condition nor the accumulative condition is satisfied. After applying $f\circ g$ operations, the recursion result $X^{k}$ is replaced by $X^{k+1}$ but not contained in $X^{k+1}$. Further, the aggregate operation $g(\{x_i\})=\sum_i{x_i}+0.15$ does not have the accumulative property due to the additional constant $0.15$.
+
+Fortunately, these computations can be converted to be qualified for asynchronous aggregation. We provide the convertibility conditions as follows.
+
+\begin{theorem}
+\label{th:convert}
+(\textbf{Convertibility}) A recursive program can be converted to an accumulated recursive program for asynchronous aggregation, as long as the recursion performs infinite times and an aggregate operation $g'()$ with the \textbf{accumulative} and \textbf{commutative} properties can be found with the following conditions:
+\begin{itemize}
+  \item \textbf{convertible}: $g(X)=g'(X\cup y)$;
+  \item \textbf{eliminable}: $lim_{n\rightarrow\infty}(g'\circ f)^n(x)=\textbf{0}$,
+\end{itemize}
+where the $g'()$ and $f()$ operations are \textbf{order independent} $g'\circ f\circ g'(X)=g'\circ f(X)$, $y$ is a constant value, and \textbf{0} is the identity element of the $g'()$ operation. The $g'()$ operation is the aggregate operation in the new accumulated recursive program.
+\end{theorem}
+
+The formal proof can be found in Appendix Sec. \ref{sec:app:proof:convert}. We present the intuition as follows. We aim to find a new aggregate operation $g'()$ that is with an additional constant input value $y$ but always returns the same result as $g()$, i.e., $g(X)=g'(X\cup y)$. The constant input implies the set containment relation between result and input, which makes it satisfy the monotonic condition that is required for accumulated recursive program. In addition, the eliminable property guarantees the accumulated recursive program to converge, such that the result is independent of $X$. Note that, it is not realistic to perform recursion infinite times. In practice, we will stop the recursion as long as $(g'\circ f)^n(x)$ is ``small'' enough.
+
+%\item $\lim\limits_{n\rightarrow\infty}(f\circ g')^n(X)=\textbf{0}$,
+
+For example, PageRank is such an iterative algorithm that can be converted to the accumulated recursive form \cite{maiter}. In original PageRank, $g(\{x_j\})=\sum_j{x_j}+0.15$. The $g()$ function can be rewritten as $g(X)=g'(X\cup y)$ where the $g'()$ function can be ``SUM'', $X=\{x_j\}$ is the input values set, and the constant value $y$ can be 0.15. Apparently, $g'()$ (i.e., ``SUM'') has the accumulative and commutative property. In addition, the $f()$ operation in PageRank contains a constant damping factor 0.85, which leads to $(g'\circ f)(x)<x$ and $lim_{n\rightarrow\infty}(g'\circ f)^n(x)=0$. Furthermore, the $f()$ operation and $g'()$ operation in PageRank is order independent, which makes it suitable for asynchronous aggregation. The resulted ranking scores are the same no matter making decay first $g\circ f(X)$ or making summation first $f\circ g(X)$, i.e., $\sum_j(0.85*\frac{r_j}{d})=0.85*\frac{\sum_j(r_j)}{d}$. There exist other convertable algorithms, such as Program 13 Jacobi Method in Appendix Sec. \ref{sec:app:example}.
+
+%For the PageRank example, the $f()$ operation decays the ranking scores, and the $g()$ operation\footnote{The $g()$ operation in PageRank is SUM which is the aggregate operation in the accumulated recursive form.} adds up the partial ranking scores. The resulted ranking scores are the same no matter making decay first ($g\circ f(X)$) or making summation first ($f\circ g(X)$), i.e., $\sum_j(0.85*\frac{r_j}{d})=0.85*\frac{\sum_j(r_j)}{d}$.
+
+
+\subsection{Aggregations Scheduling}
+\label{sec:async:pri}
+
+Due to the power-law property of real world data, the computations that rely on different data inputs also exhibit uneven contributions to the final result. Asynchronous aggregation offers us the scheduling flexibility of these computations but has the side effect of nondeterministic performance. Therefore, a scheduling policy is crucial to guarantee better performance.
+
+In accumulated recursive program, the aggregate operation induces a partial order defined as follows.
+
+\begin{definition}
+\label{def:order}
+(\textbf{Partial Order}) Let $X$ and $Y$ denote two subsets of a set $S$. In accumulated recursive program, the aggregate operation $g()$ induces a partial order $\preceq$ over $S$, such that $g(X)\preceq g(Y)$ if and only if $X\subseteq Y$.
+\end{definition}
+
+For example, MIN and MAX operations induce partial orders ``$\leq$'' and ``$\geq$'' respectively. SUM and COUNT operations both induce partial order ``$\geq$''.
+
+Let $g(X)$ be the accumulated result at some point. By asynchronous aggregation, $f\circ g$ operations are further applied on a subset $Y\subseteq X$. Due to the accumulative property, the accumulated result is updated to be $g(X\cup f\circ g(Y))$. Since $X\subseteq X\cup f\circ g(Y)$, we have $g(X)\preceq g(X\cup f\circ g(Y))$ according to Definition \ref{def:order}. This implies that the accumulated result $g(X)$ is monotonically increasing with respect to the partial order $\preceq$. The accumulated result $g(X)$ will not stop increasing until a convergence point $x^*=g(X^*)$ is reached. We have the following theorem to guide the scheduling of aggregate operations.
+
+
+\begin{theorem}
+\label{th:schedule}
+(\textbf{Aggregations Scheduling}) In accumulated recursive program where $g()$ defines a partial order $\preceq$, let $g(X)$ be the accumulated result during the computation, $\{Y_1,\ldots,Y_n\}$ be all available subsets of $X$ that can perform asynchronous aggregation. By scheduling the $f\circ g$ operations on the subset $Y_i$ such that $g(Y_j)\preceq g(Y_i)$ for any $Y_j$, the accumulated result $g(X\cup f\circ g(Y_i))$ is the closest to $g(X^*)$.
+\end{theorem}
+
+
+\begin{proof}
+Due to the monotonic property, $f$ is monotone under $g$, then $f\circ g$ is also monotone under $g$. If $g(Y_j)\preceq g(Y_i)$ for any $j$, we have $g(f\circ g(Y_j))\preceq g(f\circ g(Y_i))$. Further, we have $g(X\cup f\circ g(Y_j))\preceq g(X\cup f\circ g(Y_i))$. Since the accumulated result is monotonically increasing w.r.t. $\preceq$, scheduling the $f\circ g$ operations on the subset $Y_i$ will result in the biggest progress approaching to the convergence result $g(X^*)$.
+\end{proof}
+
+
+Take graph computation as an example, $Y_i$ corresponds to the set of state values of node $i$'s neighbors. In SSSP, the node $i$ with the shortest distance (i.e., $g(Y_i)$ is the smallest where $Y_i$ is the set of shortest distances of its neighbors) is always scheduled first, which is exactly the same as Dijkstra's algorithm. In PageRank, the node $i$ with the largest ranking score (i.e., $g(Y_i)$ is the largest where $Y_i$ is the set of ranking score increments of its neighbors) is always scheduled first, which was shown much better performance \cite{Zhang:2011:PDF:2038916.2038929}.
+
+%if the recursive program converges to a fixpoint $g(X^*)$ where $g(X)\preceq g(X^*)$ for any $X$, the recursion's result after performing asynchronous aggregation on $Y_2$, i.e., $g(X\cup f\circ g(Y_2))$, is closer to the fixpoint than that after performing asynchronous aggregation on $Y_1$, i.e., $g(X\cup f\circ g(Y_1))$. Therefore, we can achieve the optimal scheduling as long as the operation $f\circ g(Y^*)$ is always scheduled where $Y^*$ is the subset of $X$ that satisfies $f\circ g(Y)\preceq f\circ g(Y^*)$ for any available subset $Y$.
+
+%For example, in SSSP, the node with the shortest distance is always scheduled first to achieve the optimal performance, which is exactly the same as dijkstra's algorithm. In PageRank, the node with the largest ranking score is always scheduled first, which was shown much better performance \cite{Zhang:2011:PDF:2038916.2038929}.
+
+%Note that, it is not realistic to implement global scheduling in distributed computing. In practice, a local scheduling that maintains scheduling priorities on each worker can also be effective. In addition, setting the appropriate scheduling granularity is not trivial. It is a tradeoff between scheduling effectiveness and scheduling overhead.
+
+
+
+
+\subsection{Automatic Asynchronization}
+\label{sec:async:autoasync}
+
+%With the provided conditions for writing an accumulated recursive program (Theorem \ref{th:monotone}), for asynchronous aggregation (Theorem \ref{th:async}), and for conversion (Theorem \ref{th:convert}),
+Though the conditions for asynchronous aggregation have been identified, it is still hard for a non-expert programmer to verify these conditions manually. It is even harder to find an aggregate function $g'()$ in order to convert a normal recursive program to an accumulated recursive program. To alleviate the burden of programmers, an automatic asynchronization scheme is desired. In this subsection, we discuss how to automatically verify these conditions given the $g()$ and $f()$ operations\footnote{The $g$ and $f$ operations in Datalog programs can be identified as will be shown in next section.}.
+
+The condition verification problem can be thought of as a form of the constraint satisfaction problem, which can be analyzed with the help of \emph{satisfiability modulo theories} (SMT) \cite{53e486195688442995f82bfe28c55731}. The satisfiability of these conditions can then be checked by an SMT solver, such as Z3 \cite{DeMoura:2008:ZES:1792734.1792766}. Next, we show how to reduce these condition verification problems into SMT satisfiability solving problems.
+
+%, so that the automatic condition verification and automatic asynchronization can be achieved.
+
+First, the $f()$ and $g()$ functions and the conditions have to be translated into a formula for being verified by an SMT solver. Given a function $F=f(x_1)$ or $F=g(x_1,\ldots,x_n)$, we are interested in a formula for $F$ of the form $\phi_F^{o_1,\ldots,o_m}$, where $o_1,\ldots,o_m$ are output variables \cite{Liu:2014:ADP:2670979.2670980}. Intuitively, the formula $\phi$ is ``correct'' if an assignment to $\{x_1,\ldots,x_n,o_1,\ldots,o_m\}$ makes $\phi$ be true if and only evaluating $F(x_1,\ldots,x_n)$ returns $o_1,\ldots,o_m$. Then the satisfiability of $\phi$ exactly implies that the function will compute the same output. Based on this formula, we present the formulas for different conditions in the following.
+
+For the accumulative and commutative conditions in Theorem \ref{th:monotone} and the order independent condition in Theorem \ref{th:async}, the condition verification problems can be reduced to SMT satisfiability problems via the following theorem.
+
+\begin{theorem}
+\label{th:auto:1}
+(\textbf{Accumulative, Commutative, and Order Independent}) $\forall x_1,x_2,x_3$, the condition 1 or 2 or 3 is true if and only if $\phi_{F_l}^{o1,\ldots,o_m}\wedge \phi_{F_r}^{o_1',\ldots,o_m'}\wedge (\vee_{i=1}^m{o_i\neq o_i'})$ is not satisfiable, where
+\begin{itemize}
+  \item condition 1: accumulative, $F_l=g(x_1,x_2,x_3)$ and $F_r=g(g(x_1,x_2),x_3)$;
+  \item condition 2: commutative, $F_l=g(x_1,x_2)$ and $F_r=g(x_2,x_1)$;
+  \item condition 3: order independent, $F_l=g(f(g(x_1,x_2)))$ and $F_r=g(f(x_1),f(x_2))$.
+\end{itemize}
+\end{theorem}
+
+In the theorem, $\wedge$ denotes AND operator and $\vee$ denotes OR operator. Note that, SMT solver cannot answer ``whether a formula $F$ is always true?'' but only answers ``whether a formula $F$ is satisfiable?''. A formula $F$ is \emph{satisfiable} if there is some assignment of appropriate values to its uninterpreted function and constant symbols under which $F$ evaluates to true. Thus, to verify a condition (that should be always true), we convert the ``$F$ is always true'' problem to the ``not $F$ is not satisfiable'' problem. If $F$ is always true, then ``not $F$'' is always false, and then ``not $F$'' will not have any satisfying assignment¡£
+
+%; that is, not $F$ is not satisfiable.
+
+%The proof can be found in Appendix Sec. \ref{}.
+
+\begin{theorem}
+\label{th:auto:2}
+(\textbf{Eliminable}) $\forall x$, the eliminable condition is true if $\phi_{F}^{o_1,\ldots,o_m}\wedge (\vee_{i=1}^m{o_i\preceq x})$ is not satisfiable, where $F=g'(f(x))$ and $\preceq$ is the partial order induced by $g'()$.
+\end{theorem}
+
+Similarly, we use Theorem \ref{th:auto:2} to verify the eliminable condition in Theorem \ref{th:convert}. The intuition is that the contraction property $g'(f(x))\preceq x$ implies the eliminable property, which can be used as a sufficient condition for verifying the eliminable condition.
+
+%We provide the proof in Appendix Sec. \ref{}.
+
+\begin{theorem}
+\label{th:auto:3}
+(\textbf{Monotonic}) $\forall x_1,x_2$, the monotonic condition is true if and only if $\phi_{F}^{o_1,\ldots,o_m}\wedge ((\vee_{i=1}^m{x_1\neq o_j})\vee (\vee_{i=1}^m{x_2\neq o_j}))$ is not satisfiable, where $F=f(g(x_1,x_2))$.
+\end{theorem}
+
+We use Theorem \ref{th:auto:3} to verify the monotonic condition in Theorem \ref{th:monotone}. The formula implies that, neither are $x_1,x_2$ contained in the result set nor is any of them contained in the result set.
+
+
+\begin{theorem}
+\label{th:auto:4}
+(\textbf{Convertable}) $\forall x_1,x_2$, the convertable condition is true if $\phi_{F_l}^{o1,\ldots,o_m}\wedge \phi_{F_r}^{o_1',\ldots,o_m'}\wedge (\vee_{i=1}^m{o_i\neq o_i'})$ is satisfiable, where $F_l=g(x_1,x_2)$, $F_r=g'(x_1,x_2,c)$, and $c$ is a constant.
+\end{theorem}
+
+Furthermore, SMT solver Z3 can be used to find a qualified aggregate function $g'()$ in Theorem \ref{th:convert}. We declare a constant $c$ and declare a function $g'()$ without defining the specific computation. Following Theorem \ref{th:auto:4}, we use Z3 to check the satisfiability. If the formula is satisfiable, it will return the possible $g'()$ and $c$, otherwise it will return unknown or unsatisfiable. We can then convert the returned $g'()$ to a program to achieve automatic conversion.
+
+%building condition template using Z3 (built-in condition checking templates for all conditions)
+
+
+
+\begin{comment}
+\begin{theorem}\label{def:recagg}
+\textbf{(Recursive Datalog with aggregation)} Let $g()$ represent the aggregate function $g()$, and let $f()$ represent the rest of the rules. The recursive Datalog with aggregation is then defined as the recursive application of the function $(f\circ g)$ over the initial input tuples and the previous recursion's result.
+\end{theorem}
+
+\begin{theorem}\label{theo:seminaive}
+\textbf{(Conditions for Convergence)} Semi-naive evaluation can be used with the same result by naive evaluation if both the following conditions satisfied.
+
+1) $f()$ is monotone w.r.t. the order induced by $g()$;
+
+2) The input parameters of $g()$ are finite, such that it converge after $n$ recursions $X\preceq (f\circ g)(X)\preceq\ldots\preceq (f\circ g)^n(X)=(f\circ g)^{n+1}(X)$;
+
+or
+
+2) (contraction theorem) $X_{i+1}=f\circ g(X_i)$, and $|X_i-X^*|\leq \alpha\cdot|X_{i+1}-X^*|$ where $0<\alpha<1$ such that it converge after $n$ recursions and $X_n\approx X_{n+1}$.
+\end{theorem}
+
+\Paragraph{Semi-naive Evaluation} Semi-naive evaluation is an optimization critical to the efficient execution of recursive Datalog rules. It avoids redundant computation by joining only subgoals in the body of each rule with at least one new answer produced in the previous iteration.
+
+The process of semi-naive evaluation is the following. Starting from $X'_0=X_0$, for each $i\geq 0$, we have:
+\begin{equation}\label{eq:seminaive1}
+  Y'_{i+1}=g(X'_i),
+\end{equation}
+\begin{equation}\label{eq:seminaive2}
+  \Delta_{i+1}=Y'_{i+1}-Y'_i,
+\end{equation}
+\begin{equation}\label{eq:seminaive3}
+  X'_{i+1}=X'_i\cup f(\Delta_{i+1}).
+\end{equation}
+Note that, (\ref{eq:seminaive3}) is true if and only if $X\subseteq_{bag} f\circ g(X)$. (\ref{eq:seminaive2}) is true to require that $g()$ is monotone w.r.t. $\subseteq_{bag}$, otherwise $\Delta_{i+1}$ is negative.
+
+\begin{theorem}\label{theo:seminaive}
+\textbf{(Conditions for Semi-naive Evaluation)} Semi-naive evaluation can be used with the same result by naive evaluation if both the following conditions satisfied.
+
+1) $X\subseteq_{bag} f\circ g(X)$;
+
+2) $g()$ is monotone w.r.t. $\subseteq_{bag}$ (MIN, MAX, SUM, COUNT);
+
+3) $f()$ is distributive.
+\end{theorem}
+
+We use mathematical induction to show that $Y'_i=Y_i=g(X_{i-1})$.
+Basis: $Y'_1=g(X'_0)=g(X_0)=Y_1$.
+Inductive: assuming $Y'_k=Y_k$ for all $k\leq i$, then we have:
+\begin{equation}\label{eq:seminaive}
+\begin{aligned}
+  Y'_{i+1}&=g(X'_i)=g(X'_{i-1}\cup f(\Delta_i))\\
+          &=\ldots\\
+          &=g(f(\Delta_1)\cup f(\Delta_2)\cup\ldots\cup f(\Delta_i))\\
+          &=g(f(\Delta_1\cup \Delta_2\cup\ldots\cup\Delta_i))\\
+          &=g(f(Y'_i))=g(f(Y_i))=Y_{i+1}.
+\end{aligned}
+\end{equation}
+
+We can limit the aggregate operation that satisfies $g()$ is monotone w.r.t. $\subseteq_{bag}$, such as MIN, MAX, SUM, COUNT. In order to check $X\subseteq_{bag} f\circ g(X)$, we can analyze the Datalog program (check whether there is a union rule with the previous result). Or else, we require users to check their program and write their app using \emph{delta aggregate} operator.
+
+\Paragraph{Asynchronous Evaluation} Asynchrony is known to bring more parallelism without synchronous barriers between iterations. This is important when running in a large-scale heterogeneous environment, which can lead to significant long synchronization time. Further, it is allowed to use more recent state to update current state rather than using the previous recursion's result, so that the evaluation if more efficient.
+
+
+\begin{theorem}\label{theo:async}
+\textbf{(Conditions for Asynchronous Evaluation)} Asynchronous evaluation can be used with the same result by naive evaluation if the following conditions satisfied.
+
+1) conditions for semi-naive evaluation satisfied;
+
+2) $f\circ g(X)=g\circ f(X)$;
+
+3) suppose $X=X_a\cup X_b$ and $X_a\cap X_b=\emptyset$, $g(X_a\cup X_b)=g(g(X_a)\cup g(X_b))$.
+\end{theorem}
+
+\begin{proof}
+The program can be executed asynchronously means that for any combination of any subset of $\Delta V_j$ can be aggregated together without considering the aggregation order of $\Delta V_0\rightarrow\Delta V_1\rightarrow\ldots\rightarrow\Delta V_i$.
+
+Suppose $\Delta V_{ka}$ is a subset of $\Delta V_k$ (i.e., $\Delta V_{ka}\cup\Delta V_{kb}=\Delta V_k$) and $\Delta V_{jb}$ is a subset of $\Delta V_j$ (i.e., $\Delta V_{ja}\cup\Delta V_{jb}=\Delta V_j$). If we can prove that $\Delta V_{ka}$ and $\Delta V_{jb}$ can be aggregated without the constraint that $\Delta V_{ka}$ and $\Delta V_{kb}$ have to be aggregated first, the theorem is proved.
+
+\begin{equation}\label{eq:async}
+\begin{aligned}
+    &g\Big(f\big(g(\Delta V_{ka}\cup\Delta V_{jb})\big)\cup f\big(\Delta V_{kb}\cup\Delta V_{ja}\cup\Delta V_0\cup\ldots\cup\Delta V_i\big)\Big)\\
+    =&g\Big(g\big(f(\Delta V_{ka}\cup\Delta V_{jb})\big)\cup f\big(\Delta V_{kb}\cup\Delta V_{ja}\cup\Delta V_0\cup\ldots\cup\Delta V_i\big)\Big)\\
+    =&g\Big(f\big(\Delta V_{ka}\cup\Delta V_{jb}\big)\cup f\big(\Delta V_{kb}\cup\Delta V_{ja}\cup\Delta V_0\cup\ldots\cup\Delta V_i\big)\Big)\\
+    =&g\Big(f\big(\Delta V_0\cup\Delta V_1\cup\ldots\cup\Delta V_i\big)\Big)
+\end{aligned}
+\end{equation}
+
+According to (\ref{eq:seminaive}), it yields to the same result as synchronous aggregation.
+\end{proof}
+
+
+\Paragraph{Prioritized Evaluation}
+
+\begin{theorem}\label{theo:pri}
+\textbf{(Rules for Prioritized Evaluation)} Asynchronous evaluation can be used with the same result by naive evaluation if the following conditions satisfied.
+
+1) $X\subseteq_{bag} f\circ g(X)$;
+
+2) $g()$ is monotone w.r.t. $\subseteq_{bag}$ (MIN, MAX, SUM, COUNT);
+
+3) $f()$ is distributive.
+\end{theorem}
+\end{comment}

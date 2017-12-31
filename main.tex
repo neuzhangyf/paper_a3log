@@ -1,0 +1,212 @@
+\documentclass[sigconf]{acmart}
+
+%\setcopyright{rightsretained}
+
+
+
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{amsmath}
+\usepackage{amsopn}
+\usepackage{comment}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{listings}% http://ctan.org/pkg/listings
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+\newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
+
+\hyphenpenalty=5000
+\tolerance=500
+
+\begin{document}
+%
+% paper title
+% can use linebreaks \\ within to get better formatting as desired
+\title{A3: Automatic Asynchronous Aggregation}
+
+% author names and affiliations
+% use a multiple column layout for up to three different
+% affiliations
+
+% conference papers do not typically use \thanks and this command
+% is locked out in conference mode. If really needed, such as for
+% the acknowledgment of grants, issue a \IEEEoverridecommandlockouts
+% after \documentclass
+
+% for over three affiliations, or if they all won't fit within the width
+% of the page, use this alternative format:
+%
+\author{}
+
+% make the title area
+
+
+
+\begin{abstract}
+Synchronous aggregation in parallel and distributed computing is the root reason of low efficiency. On the other hand, asynchronous aggregation is promising, which breaks up synchronization barriers and allows coordination-free execution. However, asynchronous aggregation suffers from the problems of non-guaranteed correctness and non-deterministic performance due to the possible redundant computations and communications. Moreover, asynchronous program is a lot harder to write, tune, and debug. To address these issues, we propose A3, Automatic Asynchronous Aggregation. Based on A3, we design and implement a Datalog system, A3Log, which provides both shared-memory runtime engine and distributed runtime engine. Our results on Amazon EC2 show that asynchronous execution can achieve up to two-orders-of-magnitude speedup over synchronous counterpart.
+\end{abstract}
+%%With A$^3$ theory, asynchronous aggregation of recursive program is guaranteed to return correct result and achieve better performance, and a recursive program can be automatically converted for asynchronization.
+
+\keywords{Asynchronous aggregation, parallel aggregation, recursive program, Datalog}
+
+\maketitle
+
+\newcommand{\Paragraph}[1]{\smallskip\noindent{\bf #1.}}
+%\newtheorem{theorem}{\textbf{Theorem}}
+%\newtheorem{lemma}{\textbf{Lemma}}
+%\newdef{definition}{\textbf{Definition}}
+
+
+\input{intro}
+\input{aggre}
+\input{async}
+\input{system}
+\input{expr}
+\input{related}
+\input{conclusion}
+
+
+
+
+\begin{comment}
+\section{Delta Monotonic Aggregates}
+
+\subsection{Semantics}
+
+The delta monotonic aggregate operation $g$ is used in recursive aggregations. It aggregates a set of values to $\Delta v$ and further monotonically aggregates $\Delta v$ to a maintained value $v$. We provide the formal definition of \emph{delta monotonic aggregate} operation as follows.
+
+\begin{definition}
+\label{def:daggr}
+Given any normal aggregate operator $\oplus$, the delta monotonic aggregate operation $g$ defined over $\oplus$ aggregates a number of values $v_1,\ldots,v_n$ to $\Delta v$ and monotonically update the maintained $v$ in a two-step manner.
+\begin{equation}\label{eq:daggr}
+\begin{aligned}
+g(v_1,\ldots,v_n): \quad &\Delta v=v_1\oplus v_2\oplus \ldots\oplus v_n;\\
+                    &v=v\oplus \Delta v.
+\end{aligned}
+\end{equation}
+The initial $v$ is set to the identity element\footnote{The identity element is a special type of element of a set with respect to a binary operation on that set, which leaves other elements unchanged when combined with them.} with respect to the specific aggregation function.
+\end{definition}
+
+Suppose the normal aggregate operator $\oplus$ could be \texttt{max}, \texttt{min}, \texttt{sum}, \texttt{count}, etc. We have correspondingly define a series of delta monotonic aggregate operators \texttt{dmax}, \texttt{dmin}, \texttt{dsum}, \texttt{dcount}, etc. Users also have the option to define their own delta monotonic aggregators based on Definition \ref{def:daggr}.
+
+The Datalog program with a recursive and delta monotonic aggregate is typically written with the following form. It is repeatedly evaluated until convergence.
+\begin{lstlisting}
+  P($x_1,\ldots,x_m,g[\Delta v]$) $\leftarrow$ P($x_1,\ldots,x_m,\Delta v'$),
+                    Q$_1$($x_1,\ldots,x_m,w_1$),
+                    ...
+                    Q$_k$($x_1,\ldots,x_m,w_k$),
+                    $\Delta v=f(\Delta v',w_1,\ldots,w_k)$,
+                    [termination condition].
+\end{lstlisting}
+
+\texttt{P} is the recursive defined part. \texttt{Q}$_i$ ($1\leq i\leq k$) is the other facts that support the query. $x_1,\ldots,x_m$ are the \emph{group-by arguments} (which could be zero). $w_1,\ldots,w_k$ are the values retrieved from facts Q$_1,\ldots,$Q$_k$. $f$ is a user-defined function applied on $\Delta v'$. $g$ is the \emph{delta monotonic aggregate operator}, and $[\Delta v]$ is a set of \emph{delta aggregate variables}.
+
+%\cite{Zhao:2017:AGP:3035918.3035943}
+\Paragraph{Termination Condition} In traditional Datalog, the recursive query terminates when no new facts is found. This follows the fixpoint theory. However, as we extend Datalog to support aggregations, it is possible that some new facts are found continuously even though their \emph{contribution}\footnote{The new facts are aggregated to be values which can be identified as contributions to final result.} to the final result is less and less. Therefore, we should correspondingly extend Datalog language to help users specify how to terminate based on the aggregated values, i.e., whether the current contribution is enough for convergence.
+
+The \textbf{termination condition} defines how the recursive query ends. We allow users to define their own termination condition in the [] part.
+\begin{enumerate}
+  \item To be as much general as possible, users can use an aggregation that combines the global information to make the decision. For example, $[sum(v)>0.999]$ in PageRank, $[sum(\Delta v)=0]$ in SSSP.
+  \item We allow users to use \texttt{any} and \texttt{all} as shortcut to check termination condition. For example, $[any \Delta v<0]$, $[all v>1]$. Note that, this can also be realized equally by using aggregation ($[max(Delta v)<0]$, $[min(v)>1]$).
+  \item The recursive query sometimes can be decomposed into multiple individual record-level queries. This is common in graph queries where each query can be decomposed into multiple node-level queries. As stated in \cite{Low:2012:DGF:2212351.2212354}, the recursive query with multiple node-level queries can be terminated individually rather than terminated synchronously. So we also allow users to specify individually termination check. For example, $[\Delta v < 0.0001]$ in PageRank indicates that if the node ranking score change is less than 0.0001, the node is considered as converged and will not involve in next iteration.
+  \item If no termination condition is specified, the recursive query terminates when there is no new facts found.
+  \item If multiple termination conditions are defined, it terminates when any of termination conditions is met. Multiple termination conditions can be defined as follows, $[termination condition 1][termination condition 2][\ldots]$.
+  \item In the synchronous execution case, the termination condition check is launched after every iteration. In the asynchronous execution case, the termination condition check is launched every other a certain time interval. Users can specify the time interval $T$ in millisecond unit after [], e.g., [termination condition](10000).
+\end{enumerate}
+
+\Paragraph{Evaluation} During evaluation, the rule body is \textbf{only} allowed to use the aggregated delta values $\Delta v$ retrieved in previous recursion \textbf{rather than} using the updated maintained variable $v$. $v$ is not exposed to users but it stores the final result. While in non-recursive rules, the aggregation result $v$ is used for evaluation. In other words, each key is associated with two variables, i.e., not only $v$ but also $\Delta v$ that depicts the monotonically increase/decreased value. The evaluation terminates when the aggregated delta value $[\Delta v]$ means nothing, i.e., $[\Delta v]\oplus v=v$.
+
+To generalize the recursively defined rule, more than one rules could be involved in a recursion.
+
+\begin{lstlisting}
+  R$_1$($x_1,\ldots,x_m$,X$_1$) $\leftarrow$ P($x_1,\ldots,x_m,v$),
+  ...
+  R$_j$($x_1,\ldots,x_m$,X$_j$) $\leftarrow$ R$_{j-1}$($x_1,\ldots,x_m$,X$_{j-1}$),
+  P($x_1,\ldots,x_m,g[\Delta v]$) $\leftarrow$ R$_j$($x_1,\ldots,x_m$,X$_j$).
+\end{lstlisting}
+
+We omit the other facts and only leave the rules related to delta monotonic aggregation for describing each rule. Regarding the rule that is not recursively defined, fact \texttt{P} uses $v$ instead of $\Delta v$ for evaluation as shown in the first rule. Semi-naive evaluation will be used to evaluate the rules. When evaluating the last rule, the newly discovered facts $\Delta$\texttt{X}$_j$ is used to identify delta values $[\Delta v]$ which will be aggregated and used to update $v$.
+
+\Paragraph{Equivalence to Semi-Naive Evaluation} When evaluating the recursive datalog program with this semantics, new fact is generated if and only if $v$ is updated, and it will be used in next recursion. Otherwise, no new fact is generated, and it will terminate the recursion on this fact. Let us rethink the semi-naive evaluation of the Datalog program with recursive aggregations. The semi-naive evaluation operates on newly discovered facts. It is an optimization critical to the efficient execution of recursive Datalog rules. While with aggregation functions, the incremental sets can be transformed to delta values. The delta values implicitly indicate the aggregated values obtained from the incremental sets. Therefore, rather than evaluating on incremental sets, we can evaluate on delta values to achieve the same cost-effective goal. The recursive Datalog program with our delta monotonic aggregates actually simulates the traditional semi-naive evaluation while with much less space cost, since we already transform the relatively large set of data to only two values $v$ and $\Delta v$.
+
+
+
+\subsection{Benefits}
+
+\Paragraph{Fixpoint Guarantee} When viewed as a sequence, the maintained variable $v$ is updated monotonically. We have shown the equivalence between delta monotonic aggregate and semi-naive evaluation. Similar to \cite{Lam:2013:SDE:2510649.2511289}, we have the following theorem \cite{fixpoint}.
+
+
+\begin{theorem}
+Given a set of recursive rules written with delta aggregate function $g$ in a Datalog program, let $f$ represent the rest of rules. If the aggregation $g$ defines a partial order $\preccurlyeq$ where $g(X)\preccurlyeq g(X\cup Y)$ for any $Y$ in a finite domain, and $f$ is monotone with respect to the partial order $\preccurlyeq$, then there exists a unique greatest fixed point.
+\end{theorem}
+\begin{proof}
+\end{proof}
+
+Following \cite{Lam:2013:SDE:2510649.2511289}, we have the following theorem.
+\begin{theorem}
+\label{the:delta}
+The recursive datalog programs with delta monotonic aggregate will yield the same greatest fixpoint as that with normal aggregate, as long as $g$ is commutative, associative, and $g\circ g(X)=g(X)$.
+\end{theorem}
+\begin{proof}
+Suppose an arbitrary aggregation $g$ and the recursive datalog program with $g$ starts from $V_0$ and converges to a fixpoint $V_i$. That is,
+\begin{equation}
+V_0\preccurlyeq V_1=g(f(V_0))\preccurlyeq\ldots\preccurlyeq V_i=g(f(V_{i-1}))=g(f(V_{i}))
+\end{equation}
+Delta monotonic aggregate remembers the previous aggregation result $V_{i-1}$ and only performs operations on $\Delta V_i$, i.e., $V_{i}=g(V_{i-1}\cup \Delta V_i)$. So we have
+\begin{equation}\label{eq:delta}
+\begin{aligned}
+V_{i}&=g(V_{i-1}\cup \Delta V_i)\\
+        &=g(V_{i-1}\cup f(\Delta V_{i-1}))\\
+       &=g(g(V_{i-2}\cup f(\Delta V_{i-2}))\cup f(\Delta V_{i-1}))\\
+       &=\ldots\\
+       &=g(f(\Delta V_0)\cup f(\Delta V_1)\cup\ldots\cup f(\Delta V_{i-1}))\\
+       &=g(f(\Delta V_0\cup\Delta V_1\cup\ldots\cup\Delta V_{i-1}))\\
+       &=g(f(V_{i-1}))
+\end{aligned}
+\end{equation}
+Note that, the fourth line is true since $g\circ g(X)=g(X)$.
+\end{proof}
+
+
+\Paragraph{Cost Effective} The recursive aggregation with delta monotonic aggregators is somehow like semi-naive evaluation. The delta monotonic aggregate operates on incremental values, while semi-naive evaluation operates on incremental set. Both of them can save a lot of computation cost. Just like semi-naive evaluation, delta monotonic aggregate can avoid a lot computations if $\Delta v$ is zero or small enough, which is \textbf{computation-effective}. Furthermore, the evaluation with delta aggregate is much more space \textbf{cost-effective}. Instead of maintaining a set of incremental sets of data, we only need to maintain two values $v$ and $\Delta v$ for each item.
+
+\Paragraph{Possibility of Asynchronous Evaluation}
+
+
+
+
+\subsection{Scheduling of Aggregation Operations}
+\label{sec:order}
+
+look at this post to see how they motivate prioritized computation. https://blog.acolyer.org/2017/01/19/prioritizing-attention-in-fast-data-principles-and-promise/
+Prioritizing attention in fast data: principles and promise CIDR 2017
+
+given an expected fixpoint, pick the aggregation operations that contribute more on approaching the fixpoint. with proof.
+
+\begin{theorem}
+If the $g\circ f$ operations with larger aggregated $\Delta V$ (based on the partial order induced by $g\circ f$) are scheduled first, we will need less or equal to the number of operations needed by synchronous aggregation.
+\end{theorem}
+\begin{proof}
+They are approaching to the fixpoint at a relatively quick pace.
+\end{proof}
+\end{comment}
+
+
+
+\bibliographystyle{ACM-Reference-Format}
+% argument is your BibTeX string definitions and bibliography database(s)
+\bibliography{./new}
+
+\appendix
+\input{appendix}
+
+% that's all folks
+\end{document}
+
+

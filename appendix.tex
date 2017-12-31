@@ -1,0 +1,308 @@
+
+\section{Proofs}
+
+\subsection{Proof of Theorem \ref{th:monotone}}
+\label{sec:app:proof:monotone}
+
+\begin{proof}
+Since $X^{k-1}\subseteq f\circ g(X^{k-1})=X^k$, we have $X^{k}=X^{k-1}\cup\Delta X^{k}$ where $\Delta X^{k}=X^{k}\setminus X^{k-1}$. Let $x^{k}$ denote the result of normal recursive program and $\bar{x}^{k}$ denote the result of accumulated recursive program after $k$ recursions. Then we have
+%We use mathematical induction to show that $x^{k}=\bar{x}^{k}$. Suppose $x^{0}=\Delta x^0$, in the basic step we have $\bar{x}^{1}=g\circ f(\Delta x^0)=g\circ f(x^0)=x^1$. In the deductive step, assuming $x^{k}=\bar{x}^{k}$ for all $k\leq i$, then we have
+\begin{align}\label{eq:monotoneproof}
+  x^{k}&=g(X^{k})=g(X^{k-1}\cup \Delta X^{k}) \tag{1}\\
+          &=\ldots \tag{2}\\
+          &=g(\Delta X^{0}\cup\ldots\cup \Delta X^{k-1}\cup \Delta X^{k}) \tag{3}\\
+          &=g(g(\Delta X^{0})\cup\ldots\cup g(\Delta X^{k-1})\cup g(\Delta X^{k})) \tag{4}\\
+          &=g(\Delta x^{0},\ldots,\Delta x^{k-1},\Delta x^{k})=\bar{x}^{k}. \tag{5}
+\end{align}
+Line (1)-(3) are true because of the monotonicity. Due to the accumulativity and commutativity, we have $g(X_1\cup X_2)=g(g(X_1)\cup X_2)=g(X_2\cup g(X_1))=g(g(X_1)\cup g(X_2))$, from which Line (4) is true. Line (5) is true because of the definition of accumulated recursive program.
+\end{proof}
+
+
+\subsection{Proof of Theorem \ref{th:async}}
+\label{sec:app:proof:async}
+
+\begin{proof}
+Let $\Delta X_{1}^{k}$ and $\Delta X_{2}^{k}$ denote two disjoint subsets of $\Delta X^{k}$, where $\Delta X^{k}$ is the intermediate result of the $k$th recursion in accumulated recursive program. If the aggregation is performed across any two recursions (which can be easily extended to any multiple recursions), i.e., $g(\Delta X_{1}^{k}\cup \Delta X_{1}^{l})$ where $k\neq l$, and the result is the same as that in synchronous aggregation, the theorem is proved.
+
+%The program can be executed asynchronously means that for any combination of any subset of $\Delta V_j$ can be aggregated together without considering the aggregation order of $\Delta V_0\rightarrow\Delta V_1\rightarrow\ldots\rightarrow\Delta V_i$.
+
+%Suppose $\Delta V_{ka}$ is a subset of $\Delta V_k$ (i.e., $\Delta V_{ka}\cup\Delta V_{kb}=\Delta V_k$) and $\Delta V_{jb}$ is a subset of $\Delta V_j$ (i.e., $\Delta V_{ja}\cup\Delta V_{jb}=\Delta V_j$). If we can prove that $\Delta V_{ka}$ and $\Delta V_{jb}$ can be aggregated without the constraint that $\Delta V_{ka}$ and $\Delta V_{kb}$ have to be aggregated first, the theorem is proved.
+
+{\small
+\begin{align}\label{eq:asyncproof}
+    &g(\Delta X^0\cup\ldots g(\Delta X_{1}^{k+1}\cup\Delta X_{1}^{l+1})\cup\Delta X_{2}^{k+1}\cup\Delta X_{2}^{l+1}\ldots\cup\Delta X^n) \tag{1}\\
+    =&g(\Delta X^0\cup\ldots g(\Delta X_{1}^{k+1}\cup\Delta X_{1}^{l+1})\cup g(\Delta X_{2}^{k+1}\cup\Delta X_{2}^{l+1})\ldots\cup\Delta X^n) \tag{2}\\
+    =&g(\ldots g(f\circ g(\Delta X_{1}^{k})\cup f\circ g(\Delta X_{1}^{l}))\cup g(f\circ g(\Delta X_{2}^{k})\cup f\circ g(\Delta X_{2}^{l}))\ldots) \tag{3}\\
+    =&g(\ldots g\circ f(\Delta X_{1}^{k})\cup g\circ f(\Delta X_{1}^{l})\cup g\circ f(\Delta X_{2}^{k})\cup g\circ f(\Delta X_{2}^{l})\ldots) \tag{4}\\
+    =&g(\ldots g\circ f(\Delta X_{1}^{k}\cup \Delta X_{2}^{k})\cup g\circ f(\Delta X_{1}^{l}\cup\Delta X_{2}^{l})\ldots) \tag{5}\\
+    =&g(\ldots f\circ g(\Delta X_{1}^{k}\cup \Delta X_{2}^{k})\cup f\circ g(\Delta X_{1}^{l}\cup\Delta X_{2}^{l})\ldots) \tag{6}\\
+    =&g(\Delta X^0\cup\ldots\cup\Delta X^{k+1}\cup \Delta X^{l+1}\cup\ldots\cup\Delta X^n) \tag{7}
+\end{align}
+}
+Line (2) is true because of the accumulative and commutative properties of $g$ operation which is required by accumulated recursive program (i.e., $g(X\cup Y)=g(X\cup g(Y))$). Line (3) is true because of Equation (\ref{eq:accumasync}). Line (4) is true because $g\circ f\circ g(X)=g\circ f(X)$. Line (5) is true because $g(g(X_1)\cup g(X_2))=g(X_1\cup X_2)$ (from accumulative and commutative properties) and the distributive property of $f$ operation. Line (6) is true because $g\circ f(X)=g\circ f\circ g(X)$ and $g(g(X_1)\cup g(X_2))=g(X_1\cup X_2)$. Line (7) is the result of synchronous recursion. Therefore, by asynchronous aggregation, the accumulated recursive program will yield to the same result as synchronous aggregation.
+\end{proof}
+
+\subsection{Proof of Theorem \ref{th:convert}}
+\label{sec:app:proof:convert}
+
+\begin{proof}
+Let $g(X^0)=x^0$, then we have
+\begin{align}\label{eq:accumproof}
+     &(g\circ f)^{n}(x^0)=(g\circ f)^{n}\circ g(X^0) \tag{1}\\
+    =&g\circ f\circ g\circ\ldots\circ g\circ f\circ g'(X^0\cup y) \tag{2}\\
+    =&g\circ f\circ g\circ\ldots\circ g'\Big((f\circ g')(X^0\cup y)\cup y\Big) \tag{3}\\
+    =&g\circ f\circ g\circ\ldots\circ g'\Big((f\circ g')(X^0)\cup f(y)\cup y\Big) \tag{4}\\
+    =&... \tag{5}\\
+    =&g'\Big((f\circ g')^{n}(X^0)\cup f^n(y)\cup \ldots\cup f(y)\cup y\Big) \tag{6}\\
+    =&g'\Big(f^{n}(y),\ldots,f(y),y\Big) \tag{7}
+\end{align}
+Line (2) is true because $g(X)=g'(X\cup y)$. Line (3) is true because $g'(X_1\cup X_2)=g'\Big(g'(X_1)\cup g'(X_2)\Big)$. Line (4) is true because the distributive property of $f()$. Since \textbf{0} is the identity of $g'()$ function, i.e., $g'(X\cup \textbf{0})=g'(X)$, Line (6) is true when the recursion performs infinite times, i.e., $n\rightarrow\infty$. Line (7) is in the result format of accumulated recursive program, which implies that the normal recursive program is converted to the accumulated recursive program.
+\end{proof}
+
+
+
+\section{Datalog Examples}
+\label{sec:app:example}
+
+\begin{verbatim}
+  Program 3. Connected Conponents
+\end{verbatim}\vspace{-0.1in}\small
+\begin{lstlisting}
+  r1. cc(X,X)$\leftarrow$ edge(X,_).
+  r2. cc(Y,min[$v$])$\leftarrow$ cc(X,$v$),edge(X,Y),
+                     cc(Y,$v$).
+\end{lstlisting}
+\normalsize
+
+Program 3 computes the connected components in a graph. Each vertex starts as its own connected component with its identifier. For all combinations of facts that satisfy the recursive bodies, the aggregate function \texttt{min} keeps and propagates only the current minimal component ID $v$ for each vertex \texttt{Y}.
+
+\begin{verbatim}
+  Program 4. Computing Paths in a DAG
+\end{verbatim}\vspace{-0.1in}\small
+\begin{lstlisting}
+  r1. cpaths(X,Y,$c$) $\leftarrow$ edge(X,Y), $c=1$.
+  r2. cpaths(X,Y,count[$c$]) $\leftarrow$ cpaths(X,Z,$c$),
+                              edges(Z,Y),
+                              cpaths(X,Y,$c$).
+\end{lstlisting}
+\normalsize
+
+Program 4 counts the paths between pairs of vertices in an acyclic graph. \texttt{r1} counts each edge as one path between its vertices. In \texttt{r2}, any \texttt{edge(Z,Y)} that extends from a computed path count \texttt{cpath(X,Z,$c$)} establishes $c$ distinct paths from \texttt{X} to \texttt{Y} through \texttt{Z}.
+
+
+\begin{verbatim}
+  Program 5. Max Probability Path
+\end{verbatim}\vspace{-0.1in}\small
+\begin{lstlisting}
+  r1. reach(X,Y,$P$) $\leftarrow$ net(X,Y,$P$).
+  r2. reach(X,Y,max[$P$]) $\leftarrow$ reach(X,Z,$P1$),
+                           reach(Z,Y,$P2$),
+                           $P=P1*P2$,
+                           reach(X,Y,$P$).
+\end{lstlisting}
+\normalsize
+
+Program 5 \cite{7113340} computes the max probability path between two nodes in a network. The \texttt{net} predicate denotes the probability \texttt{P} of reaching \texttt{Y} from \texttt{X}.
+
+\begin{verbatim}
+  Program 6. Least Common Ancestor
+\end{verbatim}\small
+\begin{lstlisting}
+  r1. ancestor(Y,X,1) $\leftarrow$ cite(Y,X), X<seed.
+  r2. ancestor(Z,X,min[$d$]) $\leftarrow$ ancestor(Z,Y,$d'$),
+                              cite(Y,X),$d=d'+1$,
+                              ancestor(Z,X,$d$).
+  r3. LCA(p1,p2,min[max(  $\leftarrow$ ancestor(p1,X,d1),
+        d1,d2)],year,X)      ancestor(p2,X,d2),
+                             Paper(X,year),
+                             p1<p2.
+\end{lstlisting}
+\normalsize
+
+Program 6 \cite{Wang:2015:AFR:2824032.2824052} computes the least common ancestor (LCA) for pairs of publications in a citations graph. An ancestor a of a paper \texttt{Z} is any paper that is transitively cited by \texttt{Z}, and the LCA a of two papers \texttt{X} and \texttt{Y} is the least ancestor of both \texttt{X} and \texttt{Y}.
+
+\begin{verbatim}
+  Program 7. What is the cost of each part
+\end{verbatim}\vspace{-0.1in}\small
+\begin{lstlisting}
+  r1. cost(Part,$\mathcal{C}$) $\leftarrow$ basic(Part,cost).
+  r2. cost(Part,sum[$\mathcal{C}$]) $\leftarrow$ assb(Part,Sub,$n$),
+                           cost(Sub,$c$),
+                           $\mathcal{C}=c*n$,
+                           cost(Part,$\mathcal{C}$).
+\end{lstlisting}
+\normalsize
+
+Program 7 \cite{7113340} is for computing the cost of a part from the cost of its subparts. The \texttt{assb} predicate denotes each part¡¯s required subparts and number required, and basic denotes the part¡¯s cost.
+
+\begin{verbatim}
+  Program 8. Viterbi Algorithm
+\end{verbatim}\vspace{-0.1in}\small
+\begin{lstlisting}
+  r1. calcV(0,X,max($L$)) $\leftarrow$ s(0,EX),p(X,EX,$L1$),
+                            pi(X,$L2$),$L=L1*L2$.
+  r2. calcV($T$,Y,max[$L$]) $\leftarrow$ s($T$,EY),p(Y,EY,$L1$),
+                            $T1=T-1$,t(X,Y,$L2$),
+                            calcV($T1$,X,$L3$),
+                            $L=L1*L2*L3$.
+\end{lstlisting}
+\normalsize
+
+Program 8 \cite{7113340} is the Viterbi algorithm for hidden Markov models. \texttt{t} denotes the transition probability \texttt{L2} from state \texttt{X} to \texttt{Y}; \texttt{s} denotes the observed sequence of length \texttt{L+1}; \texttt{p} denotes the likelihood \texttt{L1} that state \texttt{X (Y)} emitted \texttt{EX (EY)}. \texttt{r1} finds the most likely initial observation for each \texttt{X}. \texttt{r2} finds the most likely transition for observation \texttt{T} for each \texttt{Y}.
+
+\begin{verbatim}
+  Program 9. Who will come to the party?
+\end{verbatim}\small
+\begin{lstlisting}
+  r1. coming(X) $\leftarrow$ sure(X).
+  r2. coming(X) $\leftarrow$ cntComing(X,$N$), $N\geq 3$.
+  r3. cntComing(Y,count[*]) $\leftarrow$ friend(Y,X),
+                              coming(X).
+\end{lstlisting}
+\normalsize
+
+In this program, some people will come to the party for sure, whereas others only join when at least three of their friends are coming. Program 9 \cite{7113340} describes the retrieving process. With \texttt{cntComing}, each person watches the number of their friends that are coming grow, and once that number reaches three, the person will then come to the party too.
+
+\begin{verbatim}
+  Program 10. Galaxy Evolution
+\end{verbatim}\small
+\begin{lstlisting}
+  r1. galaxies(1,gid) $\leftarrow$ galaxies_seed(gid).
+  r2. galaxies(t+1,gid2) $\leftarrow$ galaxies(t,gid1),
+                            edges(t,gid1,gid2,c),
+                            c$\geq$threshold.
+  r3. edges(t,gid1,gid2, $\leftarrow$ galaxies(t,gid1),
+        count[*])           particles(pid,gid1,t),
+                            particles(pid,gid2,t+1).
+\end{lstlisting}
+\normalsize
+
+Program 10 \cite{Wang:2015:AFR:2824032.2824052} computes the history of a set of galaxies in an astrophysical simulation. The history of a galaxy is the set of past galaxies that merged over time to form the galaxy of interest at present day. The predicate \texttt{Particles(pid,gid,t)} holds the simulation output as a set of particles, where \texttt{pid} is a unique particle identifier, and \texttt{gid} is the identifier of the galaxy that the particle belongs to at time \texttt{t}. The \texttt{gid} values are unique only within their timesteps \texttt{t}, but a particle retains the same \texttt{pid} throughout the simulation.
+
+
+\begin{verbatim}
+  Program 11. Belief Propagation
+\end{verbatim}\small
+\begin{lstlisting}
+  r1. G(v,0) $\leftarrow$ E(v,_,_).
+  r2. B(v,c,b) $\leftarrow$ E(v,c,b).
+  r3. G(t,i) $\leftarrow$ G(s,i-1),A(s,t,w),$\neg$G(t,_).
+  r4. B(t,c2,sum[b']) $\leftarrow$ G(t,i),A(s,t,w),
+                         B(s,c1,b),
+                         G(s,i-1),H(c1,c2,h),
+                         b'=w*b*h,
+                         [sum$[\Delta b']<T$];
+\end{lstlisting}
+\normalsize
+
+Belief Propagation \cite{910572} is a message-passing algorithm for performing inference on graphical models, such as Bayesian networks and Markov random fields. In Program 11, \texttt{B} is the to-be-returned beliefs, \texttt{G} maintains the geodesic numbers, \texttt{A} is an input weighted network with initial beliefs \texttt{E}, and \texttt{H} is the coupling scores. \texttt{r3} and \texttt{r4} should be repeated evaluated where the geodesic number \texttt{i} is increasing, and stops when no more facts inserted into \texttt{G}. Note that, the shown Datalog program describes a single-pass belief propagation process since it does not allow loopy propagation (by $\neg$\texttt{G(t,\_)} in \texttt{r3}) \cite{Gatterbauer:2015:LSB:2735479.2735490}.
+
+\begin{verbatim}
+  Program 12. SimRank
+\end{verbatim}\small
+\begin{lstlisting}
+  r1. D(X,count[*]) $\leftarrow$ E(X,Y).
+  r2. S(X,Y,1) $\leftarrow$ E(X,Y).
+  r3. S(X,Y,sum[s']) $\leftarrow$ S(X',Y',s),E(X,X'),E(Y,Y'),
+                        D(X,d1),D(Y,d2),X$\neq$Y,
+                        s'=$\frac{C}{d1*d2}$*s,
+                        [sum$[\Delta s']<T$].
+\end{lstlisting}
+\normalsize
+
+SimRank algorithm \cite{Jeh:2002:SMS:775047.775126} is an algorithm to evaluate the similarities between node pairs in a graph. In Program 12, \texttt{S} maintains the similarities between node pairs, \texttt{E} is the edge data, \texttt{D} maintains the out degree information. The algorithm terminates when the sum of differences between two recursions is small enough.
+
+\begin{verbatim}
+  Program 13. Jacobi Method
+\end{verbatim}\small
+\begin{lstlisting}
+  r1. X(i,x) $\leftarrow$ X(i,1).
+  r2. C(i,c) $\leftarrow$ A(i,i,$a_{ii}$),B(i,$b_i$),
+                c=$\frac{b_i}{a_{ii}}$.
+  r3. X(i,sum[x']+c) $\leftarrow$ X(j,x),A(i,j,$a_{ij}$),
+                        C(i,c),A(i,i,$a_{ii}$),i$\neq$j,
+                        x'=$-\frac{a_{ij}}{a_{ii}}$*x,
+                        [sum$[\Delta x']<T$].
+\end{lstlisting}
+\normalsize
+
+In numerical linear algebra, the Jacobi method is a famous iterative algorithm for solving linear equations of the form $A\cdot X=b$, where $A$ is a matrix with each entry $a_{ij}$, and b is a vector with each entry $b_i$. In Program 13, \texttt{X} is the solution vector, \texttt{A} is the matrix, \texttt{B} is the vector, \texttt{C} is a vector maintaining the entry-specific constant $\frac{b_i}{a_{ii}}$. A sufficient (but not necessary) condition for the method to converge is that the matrix \texttt{A} is strictly or irreducibly diagonally dominant, i.e., $|a_{ii}>\sum_{j\neq i}{|a_{ij}|}|$, which implies the convertable condition, so Jacobi Method can be converted and executed asynchronously.
+
+
+\section{More Experiments}
+\label{sec:app:expr}
+
+\subsection{Scaling Performance}
+\label{sec:expr:scale}
+
+\begin{comment}
+\begin{figure}[t]
+%\vspace{-0.1in}
+	\centerline{
+	\subfloat[Shared-memory]{\includegraphics[width=1.8in]{fig/single-scalability}
+    \label{fig:single-scalability}
+    \vspace{-0.05in}}
+    \hspace{-5mm}
+    \subfloat[Distributed]{\includegraphics[width=1.8in]{fig/single-scalability}
+    \label{fig:distributed-scalability}
+    \vspace{-0.05in}}
+    }
+    %\vspace{-0.05in}
+	\caption{The scaling performance (PageRank)}
+	\label{fig:scalability}
+%\vspace{-0.2in}
+\end{figure}
+\end{comment}
+
+\begin{figure}[!t]
+    \centering
+  \includegraphics[width=2.8in]{fig/single-scalability}
+  \vspace{-0.1in}
+  \caption{Scaling performance (many-core)}
+  \label{fig:single-scalability}
+\end{figure}
+
+\begin{figure}[!t]
+    \centering
+  \includegraphics[width=2.8in]{fig/dist-scalability}
+  \vspace{-0.1in}
+  \caption{Scaling performance (distributed)}
+  \label{fig:dist-scalability}
+\end{figure}
+
+
+Due to coordination avoidance, asynchronous aggregation is expected to achieve better scaling performance. We evaluate the scaling performance of A3Log's share-memory runtime on an r3.8xlarge EC2 instance. We perform PageRank computation with the synchronous and asynchronous versions (without scheduling) of A3Log and vary the number of threads from 1 to 32. The runtime results are shown in Fig. \ref{fig:single-scalability}. We also draw the ideal scaling performance curve based on the runtime result of 1 thread. The asynchronous A3Log's scaling performance curve is closer to its ideal curve, while the synchronous A3Log exhibits larger difference to its ideal curve when running on more threads. Asynchronous execution also shows higher speedup over synchronous execution when running on more threads.
+
+We also evaluate the scaling performance of A3Log's distributed runtime on a cluster with a number of c4.large EC2 instances, each with 2 vCPUs and 3.75GB memory. We perform PageRank computation with the synchronous and asynchronous executions (without scheduling) and vary the number of workers from 1 to 32. The runtime results are shown in Fig. \ref{fig:dist-scalability}. We also draw the ideal scaling performance curve based on the runtime result of 2-workers. Similar to the results on shared-memory runtime, asynchronous execution also shows better scaling performance. Higher speedup over synchronous execution is achieved when running on larger size cluster.
+
+
+\subsection{Effectiveness of Aggregate Operations}
+\label{sec:expr:aggregations}
+
+\begin{figure}[!t]
+%\vspace{-0.1in}
+	\centerline{
+	\subfloat[RoadCA]{\includegraphics[width=1.3in, angle=-90]{fig/roadca_aggregate_progress}
+    \label{fig:single-numagg:roadca}
+    \vspace{-0.05in}}
+    \hspace{-5mm}
+    \subfloat[Livejournal]{\includegraphics[width=1.3in, angle=-90]{fig/livejournal_aggregate_progress}
+    \label{fig:single-numagg:livejournal}
+    \vspace{-0.05in}}
+    }
+    \vspace{-0.1in}
+	\caption{Effectiveness of aggregate operations to converging progress}
+	\label{fig:single-numagg}
+\vspace{-0.1in}
+\end{figure}
+
+The effectiveness of aggregate operations in asynchronous aggregation is an important advantage but tends to be underestimated. Synchronous aggregation requires to aggregate the information from previous iteration, while asynchronous aggregation accumulates the most up-to-date information. Thus, the aggregate operation is expected to be more effective. In this experiment, we evaluate the effectiveness of aggregations on accelerating the computation progress.
+
+We run PageRank on two datasets, RoadCA and Livejournal, which result in the most speedup and the least speedup comparing to synchronous aggregation as shown in Table \ref{tab:wrokload}. We record the accumulated number of aggregate operations during the computation. In the accumulated version of PageRank (see Sec. \ref{sec:async:convert}), the summation of ranking scores $\sum_i{r_i}$ is approaching to 1 and will finally converge to 1. So we estimate the computation progress by evaluating $\sum_i{r_i}$ periodically. Fig. \ref{fig:single-numagg} shows the results. By using asynchronous aggregation, the converging progress is much faster than using synchronous execution. The scheduling of aggregate operations will further speedup the progress. The asynchronous aggregation with scheduling shows more effectiveness, so that each aggregate operation contributes more. It also shows more effectiveness on the RoadCA graph than on the Lievejournal graph. This is the reason why higher speedup is observed on the RoadCA graph.
+
+
+
+%\subsection{Communication Cost}
+%\label{sec:expr:communication}
+
+%Asynchronous aggregation has the advantage of avoiding network congestion during synchronization phase.

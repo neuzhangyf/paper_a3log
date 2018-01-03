@@ -1,4 +1,4 @@
-\documentclass[sigconf]{acmart}
+\documentclass{vldb}
 
 %\setcopyright{rightsretained}
 
@@ -14,6 +14,7 @@
 \usepackage[ruled,linesnumbered]{algorithm2e}
 \usepackage{multirow}
 \usepackage{enumitem}
+\usepackage{color}
 \usepackage{listings}% http://ctan.org/pkg/listings
 \lstset{
   basicstyle=\ttfamily,
@@ -25,10 +26,11 @@
 \tolerance=500
 
 \begin{document}
+
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-\title{A3: Automatic Asynchronous Aggregation}
+\title{A3Log: Automated Asynchronous Evaluation for Recursive Datalog Programs}
 
 % author names and affiliations
 % use a multiple column layout for up to three different
@@ -45,22 +47,24 @@
 \author{}
 
 % make the title area
-
+\maketitle
 
 
 \begin{abstract}
-Synchronous aggregation in parallel and distributed computing is the root reason of low efficiency. On the other hand, asynchronous aggregation is promising, which breaks up synchronization barriers and allows coordination-free execution. However, asynchronous aggregation suffers from the problems of non-guaranteed correctness and non-deterministic performance due to the possible redundant computations and communications. Moreover, asynchronous program is a lot harder to write, tune, and debug. To address these issues, we propose A3, Automatic Asynchronous Aggregation. Based on A3, we design and implement a Datalog system, A3Log, which provides both shared-memory runtime engine and distributed runtime engine. Our results on Amazon EC2 show that asynchronous execution can achieve up to two-orders-of-magnitude speedup over synchronous counterpart.
+
+
+%Synchronous aggregation in parallel and distributed computing is the root reason of low efficiency. On the other hand, asynchronous aggregation is promising, which breaks up synchronization barriers and allows coordination-free execution. However, asynchronous aggregation suffers from the problems of non-guaranteed correctness and non-deterministic performance due to the possible redundant computations and communications. Moreover, asynchronous program is a lot harder to write, tune, and debug. To address these issues, we propose A3, Automatic Asynchronous Aggregation. Based on A3, we design and implement a Datalog system, A3Log, which provides both shared-memory runtime engine and distributed runtime engine. Our results on Amazon EC2 show that asynchronous execution can achieve up to two-orders-of-magnitude speedup over synchronous counterpart.
 \end{abstract}
 %%With A$^3$ theory, asynchronous aggregation of recursive program is guaranteed to return correct result and achieve better performance, and a recursive program can be automatically converted for asynchronization.
 
 \keywords{Asynchronous aggregation, parallel aggregation, recursive program, Datalog}
 
-\maketitle
+
 
 \newcommand{\Paragraph}[1]{\smallskip\noindent{\bf #1.}}
-%\newtheorem{theorem}{\textbf{Theorem}}
-%\newtheorem{lemma}{\textbf{Lemma}}
-%\newdef{definition}{\textbf{Definition}}
+\newtheorem{theorem}{\textbf{Theorem}}
+\newtheorem{lemma}{\textbf{Lemma}}
+\newdef{definition}{\textbf{Definition}}
 
 
 \input{intro}

@@ -53,6 +53,12 @@
 \begin{abstract}
 
 
+asynchronous is a general case for parallel processing, sequential extreme, synchronous parallel is a specific scheduling policy, asynchronous is total parallel
+automated asynchronization: 1. sufficient conditions for correct asynchronous execution 2. automated condition verification (smt solver) 3. automated convertion
+automated scheduling selection: balance between scheduling cost (sync. is a kind of scheduling), communication cost, computation effectiveness
+
+aggregation and non-aggregation extraction from datalog 
+
 %Synchronous aggregation in parallel and distributed computing is the root reason of low efficiency. On the other hand, asynchronous aggregation is promising, which breaks up synchronization barriers and allows coordination-free execution. However, asynchronous aggregation suffers from the problems of non-guaranteed correctness and non-deterministic performance due to the possible redundant computations and communications. Moreover, asynchronous program is a lot harder to write, tune, and debug. To address these issues, we propose A3, Automatic Asynchronous Aggregation. Based on A3, we design and implement a Datalog system, A3Log, which provides both shared-memory runtime engine and distributed runtime engine. Our results on Amazon EC2 show that asynchronous execution can achieve up to two-orders-of-magnitude speedup over synchronous counterpart.
 \end{abstract}
 %%With A$^3$ theory, asynchronous aggregation of recursive program is guaranteed to return correct result and achieve better performance, and a recursive program can be automatically converted for asynchronization.

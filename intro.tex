@@ -1,6 +1,24 @@
 \section{Introduction}
 \label{sec:intro}
 
+recent work on sync vs. async. we, from a different point of view, sync is a special case of async. 
+
+from parallel computing's point of view, asynchronous is a general parallel execution, sync. is a special case of asynchronous with specific scheduling policy. 
+
+sync. vs. async. sync: high scheduling cost(sync. barrier) and low communication cost; while async: low scheduling cost (coordination free) and high communication cost (no wait, no idle, every one compute and communicate) and sometimes low computation efficiency (stale comptuation). actually is to find a balance point between scheduling cost, communication cost, computation efficiency.
+
+monotonic async [maiter]: guarantee high computation efficiency, but not guaranteed low scheduling cost and low communication cost
+
+make more general aggregation, synchronous is required for correct aggregation (from algorithm aspect), async is general for parallel execution (from parallel computing aspect). use sync in parallel to guarantee correctness. monotonic async can guarantee correctness, so sync is not required and computation effiency is high
+
+first: automated asynchronization: 1. sufficient conditions for correct asynchronous execution 2. automated condition verification (smt solver) 3. automated convertion
+
+second: automatic scheduling: based on cost model. scheduling cost (sync., priority, round robin), communication cost (async is high), and computation efficiency (priority > sync. > round robin).
+
+third: use datalog 
+
+
+
 %Aggregation has for purpose the simultaneous use of different pieces of information in order to come to a conclusion or a decision. Aggregation can be performed with the use of graph theory, the use of neuronal networks, the use of probability theory, the use of rules, etc, which makes it a fundamental operation in data analytics, data mining, machine learning, decision making, etc.
 
 %In this paper, we focus on mathematical aspect of aggregation, numerical aggregation, which reduces a set of numerical values.

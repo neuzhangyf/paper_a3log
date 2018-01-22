@@ -1,22 +1,49 @@
 \section{Introduction}
 \label{sec:intro}
 
-recent work on sync vs. async. we, from a different point of view, sync is a special case of async. 
+Many of graph analyses, machine learning algorithms, relational analysis processing can be readily expressed in Datalog, a declarative logic programming language often used as a query language in deductive databases \cite{}. Datalog¡¯s support for recursion makes the expression of these algorithms natural; its high-level semantics makes it amenable to parallelization and optimization.
 
-from parallel computing's point of view, asynchronous is a general parallel execution, sync. is a special case of asynchronous with specific scheduling policy. 
+Recent work on semi-naive evaluation with recursive aggregate, monotone aggregate, on spark, distributed ... \cite{socialite, distsocialite, bigdatalog, deals}
 
-sync. vs. async. sync: high scheduling cost(sync. barrier) and low communication cost; while async: low scheduling cost (coordination free) and high communication cost (no wait, no idle, every one compute and communicate) and sometimes low computation efficiency (stale comptuation). actually is to find a balance point between scheduling cost, communication cost, computation efficiency.
+Recently, Asynchronous evaluation \cite{asyncdatalog}, vs. synchronous parallel ... show better performance
+
+However, which datalog programs can be executed asynchronously? if not, how to convert it to a form that can be executed asynchronously? sync or async which is better?
+
+To answer these questions, we propose A3Log... The basic ideas...
+
+contributions:
+
+1. conditions of asynchronous execution with correctness guarantee
+2. automated conditions verification with SMT solver
+3. cost model: automated choose sync or async. similar to powerswitch
+
+our results show that ...
+
+paper organization
+
+
+
+
+
+\begin{comment}
+recent work on sync vs. async. we, from a different point of view, sync is a special case of async.
+
+from parallel computing's point of view, asynchronous is a general parallel execution, sync. is a special case of asynchronous with specific scheduling policy.
+
+sync. vs. async. sync: high scheduling cost(sync. barrier) and low communication cost; while async: low scheduling cost (coordination free) and may high communication cost (no wait, no idle, every one compute and communicate) and sometimes low computation efficiency (stale comptuation). actually is to find a balance point between scheduling cost, communication cost, computation efficiency.
 
 monotonic async [maiter]: guarantee high computation efficiency, but not guaranteed low scheduling cost and low communication cost
 
-make more general aggregation, synchronous is required for correct aggregation (from algorithm aspect), async is general for parallel execution (from parallel computing aspect). use sync in parallel to guarantee correctness. monotonic async can guarantee correctness, so sync is not required and computation effiency is high
+sync can be expressed in parallel, but async can't be expressed in parallel
+
+make more general aggregation, synchronous is required for correct aggregation (from algorithm aspect), async is general for parallel execution (from parallel computing aspect). use sync in parallel to guarantee correctness. monotonic async can guarantee correctness and efficiency, so sync is not required and computation effiency is high
 
 first: automated asynchronization: 1. sufficient conditions for correct asynchronous execution 2. automated condition verification (smt solver) 3. automated convertion
 
 second: automatic scheduling: based on cost model. scheduling cost (sync., priority, round robin), communication cost (async is high), and computation efficiency (priority > sync. > round robin).
 
-third: use datalog 
-
+third: use datalog
+\end{comment}
 
 
 %Aggregation has for purpose the simultaneous use of different pieces of information in order to come to a conclusion or a decision. Aggregation can be performed with the use of graph theory, the use of neuronal networks, the use of probability theory, the use of rules, etc, which makes it a fundamental operation in data analytics, data mining, machine learning, decision making, etc.

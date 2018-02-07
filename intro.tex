@@ -18,7 +18,7 @@ In recent years, many system research efforts have raised to improve the perform
 %[$Myria],a big data management system.[放这段最后，重点强调异步] It is worth mentioning that MyriaX is the first work thatUsually support recursive program with aggregation.
 
 
-Compared with synchronous recursive processing, asynchronous recursive processing has many advantages, such as fast convergence \cite{}, more efficient resource utilization \cite{}, and priority scheduling \cite{}. However, in practical usage, synchronous models are more popular than asynchronous models, which can be attributed to the following three points:
+Compared with synchronous recursive processing, asynchronous recursive processing has many advantages, such as fast convergence \cite{}, more efficient resource utilization \cite{}, and priority scheduling \cite{}. However, in practical usage, synchronous systems are more popular than asynchronous systems, which can be attributed to the following three points:
 
 First, \textbf{Non-guaranteed Correctness}. There are several prior works that have employed asynchronous processing engine for improving their system performance. However, these systems only implement asynchronous execution of parallel/distributed algorithms, without any correctness guarantee of the results \cite{groute, graphlab,...}. Asynchronous computation model are blindly used and may result in inconsistent results for convex functions. Maiter \cite{} provides the sufficient conditions for correct asynchronous computations, but these conditions are only suitable in the context of vertex-centric graph computations. 
 

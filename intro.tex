@@ -1,164 +1,23 @@
 \section{Introduction}
 \label{sec:intro}
 
-Many of graph analyses, machine learning algorithms, relational analysis processing can be readily expressed in Datalog, a declarative logic programming language often used as a query language in deductive databases \cite{}. Datalog’s support for recursion makes the expression of these algorithms natural; its high-level semantics makes it amenable to parallelization and optimization.
+With the increasing of sensor performance and the rapid expansion of social network data, it is necessary to parallelize or distribute the analysis and computation of large scale data. However, the parallelization of algorithms requires programmers to have a rich knowledge of distributed systems. A large number of big data analysis systems have been proposed which provide high-level language for expressing the computation logic \cite{}. Even so, these systems still require the users to understand the specific programming logic. For example, the typical representative of the BSP computing model, Pregel \cite{} adopts a vertex-centric programming model. It requires programmers to write vertex-centric programs and to manage the communication based on the algorithm. 
 
-Recent work on semi-naive evaluation with recursive aggregate, monotone aggregate, on spark, distributed ... \cite{socialite, distsocialite, bigdatalog, deals}
+%Maiter[$]is an asynchronous graph computing system which proposed a delta-based accumulative iterative computation method. Maiter provide an asynchronous programming model, demand the programmer rewrite the algorithm in a DAIC way. The complexity of parallize or distribute an algorithm wasn’t significantly reduced.
 
-Recently, Asynchronous evaluation \cite{asyncdatalog}, vs. synchronous parallel ... show better performance
+Datalog is a well known recursive query language. It is convenient to express large scale data analysis algorithms with its high-level declarative semantics. In recent years, many system research efforts have raised to improve the performance and scalability of Datalog systems. Socialite \cite{socialite} provides a large scale graph evaluation system supporting both sequential and distribute environment. BigDatalog \cite{Bigdatalog} is built on Spark which can efficiently support recursion computation. Myria \cite{MyriaX} first proposed the monotonic asynchronous aggregation model and implement a datalog System on share-nothing engines based on myria
+%[$Myria],a big data management system.[放这段最后，重点强调异步] It is worth mentioning that MyriaX is the first work that support recursive program with aggregation.
+\textcolor{red}{This paragraph should be improved. say more about datalog, say more about its history, it was proposed 30 years ago but only become a little more popular after 2010 due to the graph/social network processing requirement. say sth about its disadvantages and advantages. then use another paragraph to introduce recent datalog systems}
 
-However, which datalog programs can be executed asynchronously? if not, how to convert it to a form that can be executed asynchronously? sync or async which is better?
 
-To answer these questions, we propose A3Log... The basic ideas...
 
-contributions:
+Compared with synchronous recursive processing, asynchronous recursive processing has many advantages, such as fast convergence \cite{}, more efficient resource utilization \cite{}, and priority scheduling \cite{}. However, in practical usage, synchronous models are more popular than asynchronous models, which can be attributed to the following three points:
 
-1. conditions of asynchronous execution with correctness guarantee
-2. automated conditions verification with SMT solver
-3. cost model: automated choose sync or async. similar to powerswitch
+First, \textbf{Non-guaranteed Correctness}. There are several prior works that have employed asynchronous processing engine for improving their system performance. However, these systems only implement asynchronous execution of parallel/distributed algorithms, without any correctness guarantee of the results \cite{groute, graphlab,...}. Asynchronous computation model are blindly used and may result in inconsistent results for convex functions. Maiter \cite{} provides the sufficient conditions for correct asynchronous computations, but these conditions are only suitable in the context of vertex-centric graph computations. 
 
-our results show that ...
+Second, \textbf{More Complexity}. Programmers are used to write sequential programs or synchronous parallel programs. Had the asynchronization conditions been formally given, it is still hard for a non-expert programmer to manually verify these conditions from their programs. In addition, writing asynchronous programs and designing asynchronous systems are even harder, because asynchronous implies disorganized and as a result complicated. Experience from Google \cite{} strongly suggests a synchronous programming model, since asynchronous code is a lot harder to write, tune, and debug. 
 
-paper organization
+Third, \textbf{Unstable Performance}. Asynchronous iterative processing avoids the intermediate result coordination phase. The parallel executions of operations are not synchronized and not strictly ordered. This implies that the computations and communications are not under control any more, which may lead to stale computations/communications and potentially reduces the efficiency. The performance gain from asynchronous computation may be not enough to compensate for the performance loss from stale computations/commmunications, leading to unstable performance.
 
 
-
-
-
-\begin{comment}
-recent work on sync vs. async. we, from a different point of view, sync is a special case of async.
-
-from parallel computing's point of view, asynchronous is a general parallel execution, sync. is a special case of asynchronous with specific scheduling policy.
-
-sync. vs. async. sync: high scheduling cost(sync. barrier) and low communication cost; while async: low scheduling cost (coordination free) and may high communication cost (no wait, no idle, every one compute and communicate) and sometimes low computation efficiency (stale comptuation). actually is to find a balance point between scheduling cost, communication cost, computation efficiency.
-
-monotonic async [maiter]: guarantee high computation efficiency, but not guaranteed low scheduling cost and low communication cost
-
-sync can be expressed in parallel, but async can't be expressed in parallel
-
-make more general aggregation, synchronous is required for correct aggregation (from algorithm aspect), async is general for parallel execution (from parallel computing aspect). use sync in parallel to guarantee correctness. monotonic async can guarantee correctness and efficiency, so sync is not required and computation effiency is high
-
-first: automated asynchronization: 1. sufficient conditions for correct asynchronous execution 2. automated condition verification (smt solver) 3. automated convertion
-
-second: automatic scheduling: based on cost model. scheduling cost (sync., priority, round robin), communication cost (async is high), and computation efficiency (priority > sync. > round robin).
-
-third: use datalog
-\end{comment}
-
-
-%Aggregation has for purpose the simultaneous use of different pieces of information in order to come to a conclusion or a decision. Aggregation can be performed with the use of graph theory, the use of neuronal networks, the use of probability theory, the use of rules, etc, which makes it a fundamental operation in data analytics, data mining, machine learning, decision making, etc.
-
-%In this paper, we focus on mathematical aspect of aggregation, numerical aggregation, which reduces a set of numerical values.
-
-In general, a sequential computation can be expressed as an ordered list of operations on input data.
-%If the data can be sliced into pieces, it is possible that the operation is performed in parallel, each on a piece of data, given that parallel/distributed computing is essential for processing big data.
-Among these operations, \emph{aggregate operation}, such as MAX/MIN/SUM, has for purpose the simultaneous use of different pieces of information in order to come to a conclusion or a decision, which is a fundamental operation in data analytics, data mining, machine learning, decision making, etc.
-
-Aggregation implies a dependency relationship between data items and coordination between concurrently executing computations. The aggregate (or group-by aggregate) computation depends on its inputs which can be the outputs of previous computations, so it has to coordinate with other computations and waits for \emph{all} its inputs to be ready. Therefore, a \emph{synchronization} step is required to guarantee the correctness of aggregation. On the contrary, as long as NO aggregation exists in the list of operations, the computations can be embarrassingly parallel.
-
-%A synchronization is also a kind of aggregation since waiting requires counting.
-
-%Parallelization is known as the essential optimization for improving performance, especially for processing big data.
-Synchronization is the unavoidable coordination step for aggregation though it is known to be costly \cite{Bailis:2014:CAD:2735508.2735509}. Researchers have made great efforts in improving parallelism while reducing the impact of synchronous aggregation. But the costly synchronization for aggregation is required to obtain a correct result. The parallelism can only be achieved between synchronization barriers but not across synchronization barriers, which reduces the scope of parallelism. For example, MapReduce \cite{Dean:2004:MSD:1251254.1251264} decomposes a computation into (non-aggregate) map operations and (aggregate) reduce operations so as to parallelize the non-aggregate map operations and parallelize the reduce operations separately. But the synchronization barrier before reduce phase is indispensable due to the aggregation property. Synchronization does not only reduce resource utilization and parallelism but also sacrifices potential scalability. In parallel and distributed computing, synchronization is the key to guarantee correctness (or the consistency of the ordered operations) while at the same time is the key to limit efficiency. Therefore, \emph{synchronous aggregation is the root reason of low efficiency}.
-
-%Intuitively, synchronization is the unavoidable coordination step for aggregation though it is known to be costly \cite{Bailis:2014:CAD:2735508.2735509}. To perform aggregation, we have to wait for all its inputs including stragglers, since the inputs of aggregation could be retrieved from previous dependent operations. }
-
-On the other hand, \emph{asynchronous aggregation} is a promising technique in which the aggregation is performed on part of inputs instead of the complete set of inputs, such that the next computation can continue based on the partial aggregation results. The strict order of operations on data including aggregations is not required. In other words, asynchronous aggregation ignores synchronization barriers and allows coordination-free execution, which is a nice property in parallel and distributed computing.
-
-Then, a few questions related to 1) correctness, 2) efficiency, and 3) automatability could be posed. Can asynchronous aggregation return the exactly \emph{same} result as synchronous aggregation? Can asynchronous aggregation be guaranteed to achieve \emph{better performance} than synchronous aggregation? Can a program with synchronous aggregation be \emph{automatically} converted to that with asynchronous aggregation? Our answers are triple YES, or at least under some clearly defined conditions. Given the positive answers, we first analyze the pros and cons of asynchronous aggregation:
-
-%, for a specific class of computations XXXXX. The asynchronous aggregation can be performed on part of input data items instead of the complete set of inputs. The group-by aggregations can be performed asynchronously (or partially) instead of synchronously. The strict order of operations on data including aggregations is not required. Most importantly, \emph{with these nice properties our goal is to guarantee the exactly correct result}. Asynchronous aggregation will give the following benefits.
-
-\Paragraph{Pro 1: Coordination-Free Execution} In parallel and distributed computing, synchronous aggregation needs coordination between processers to ensure that all its inputs are ready, where the inputs may come from other processers. Asynchronous aggregation is allowed to be performed on part of inputs, so it is unnecessary to block and wait. Every processor independently executes operations based on its available inputs, where no coordination or synchronization is required across processors. By minimizing coordination between concurrently running processers, the scalability and performance can be maximized.
-
-%\Paragraph{Pro 2: Maximum Extent of Parallelism}
-%The synchronization needed by aggregation limits the scope of parallelism. The parallelization is only permitted for the computations between two continuous aggregations. With asynchronous aggregation, another dimension of parallelism (i.e., parallelism across aggregations) can be explored. This will expand the scope of parallelism.
-\Paragraph{Pro 2: Early Result Return} %Asynchronous aggregation benefits not only from parallel computation's perspective but also from sequential computation's perspective.
-Synchronous aggregation implies that the next operation will not start until all inputs have been completely aggregated. If the aggregation is stuck due to heavy load, the following concatenation operations will be delayed. Asynchronous aggregation allows next operation to early start and to use the most recent information (partial aggregation result) to proceed, so it is expected to return an approximate result earlier. Online aggregation \cite{Hellerstein:1997:OA:253260.253291} is such an example.
-
-%Approximate query processing
-
-%Asynchronous aggregation does not only benefit parallel computing but also benefit in sequential computation. In a sequential computation, the synchronous aggregation implies that
-
-\Paragraph{Pro 3: More Effectiveness of Aggregations} The effectiveness of aggregate operations in asynchronous aggregation is an important advantage but tends to be underestimated. Synchronous aggregation requires to aggregate the information from previous iteration, while asynchronous aggregation allows to use the most up-to-date information. Thus, the aggregate operation is expected to be more effective.
-
-
-\Paragraph{Pro 4: Scheduling Flexibility} Prior works \cite{Zhang:2011:PDF:2038916.2038929,Bailis:2017:MPA:3035918.3035928} have pointed out that not all inputs contribute equally to the outputs. By prioritized scheduling of the computations that most affect its output, the result can be returned much faster or much more accurate. Synchronous aggregation limits the scheduling due to the synchronization barriers, while asynchronous aggregation will introduce more scheduling flexibility so that even higher efficiency can be explored.
-
-%allows to use more up-to-date information and results in more unevenly distributed contributions of the computations. This will introduce more scheduling flexibility so that even higher efficiency can be explored.
-
-\Paragraph{Con 1: Non-Guaranteed Correctness} A number of previous works have applied asynchronous aggregation to accelerate some iterative computations while obtaining correct results, including GraphLab \cite{Low:2012:DGF:2212351.2212354}, Myria \cite{Wang:2015:AFR:2824032.2824052}, Giraph++ \cite{Tian:2013:TLV:2732232.2732238}, GiraphUC \cite{Han:2015:GUB:2777598.2777604}, GRACE \cite{grace}, and GunRock \cite{Wang:2016:GHG:2851141.2851145}. But of course, not all computations are suitable for asynchronous aggregation. Some may lead to wrong results. These previous works did not clearly identify the conditions of returning the correct results. Maiter \cite{maiter} provides the conditions for correct asynchronous graph computations, but these conditions are not general enough to judge arbitrary aggregate operations. If we blindly use asynchronous aggregation for all computations, the correctness cannot be guaranteed.
-
-\Paragraph{Con 2: Non-Deterministic Performance} Asynchronous aggregations are free from synchronizations. This implies that the computations and communications are not under control any more, which may lead to redundant computations and communications and potentially reduces the efficiency. As mentioned in Pro 3, asynchronous aggregation gives us scheduling flexibility, but at the same time, it leaves us with non-deterministic performance.
-
-\Paragraph{Con 3: More Complexity} Programmers are used to write sequential programs or synchronous parallel programs. Had the asynchronization conditions been formally given, it is still hard for a non-expert programmer to manually verify these conditions from their programs. In addition, writing asynchronous programs and designing asynchronous systems are even harder, because asynchronous implies disorganized and as a result complicated. Experience from Google \cite{Barroso:2017:AKM:3069398.3015146} strongly suggests a synchronous programming model, since asynchronous code is a lot harder to write, tune, and debug.
-
-In order to benefit from the pros while minimizing the cons, we propose \emph{A3}, \emph{Automatic Asynchronous Aggregation}. A3 solves the problem in the context of a very common class of computations, \emph{recursive computations}. Recursive computation repeatedly applies the same operations on the output of previous recursion, where the repeatedly applied operations may include aggregation. Recursive computations are commonly used in graph algorithms (e.g., PageRank), machine learning (e.g., Belief Propagation), and science computing (e.g., Jacobi Method). In summary, this paper offers the following contributions:
-
-\Paragraph{Contribution 1: A3 Theory} A3 theory addresses the above three cons. 1) To guarantee the correctness, we clearly define the conditions that guarantee asynchronous aggregation to return the same result as synchronous aggregation. Even for some recursive programs that do not satisfy these conditions, we propose an approach to conditionally convert them to be qualified for asynchronous aggregation. 2) To guarantee the better performance, we propose a scheduling policy, which is theoretically proved to return result faster. 3) To alleviate the burden of programmers, we propose an automatic asynchronization technique. User's sequential program can be automatically checked for asynchronization possibilities and can even be automatically converted to the asynchronous program. (Sec. \ref{sec:async})
-
-\Paragraph{Contribution 2: A3Log System} We propose a Datalog system, \emph{A3Log}, to support automatic asynchronous aggregation. Datalog is an excellent candidate language for expressing computation logic because of its high-level \emph{declarative} semantics, exposing plenty of opportunities for automatic parallelization and automatic asynchronization. The A3 theory results are embedded in the Condition Checker component, so that it can asynchronize user's program automatically. A3Log provides both shared-memory runtime engine and distributed runtime engine. (Sec. \ref{sec:system})
-
-\Paragraph{Contribution 3: Extensive Experimental Studies} We experimentally evaluate A3Log, compared with 1) Socialite \cite{Lam:2013:SDE:2510649.2511289,Seo:2013:DSD:2556549.2556572}, an open-source Datalog system that supports monotonic recursive aggregation, 2) GraphLab \cite{Low:2012:DGF:2212351.2212354}, a graph system that supports asynchronous computation, 3) Myria \cite{Wang:2015:AFR:2824032.2824052}, an open-source Datalog system that supports asynchronous execution, 4) Maiter \cite{maiter}, a graph based system that supports asynchronous computation. We also perform evaluations with 7 algorithms and on 20 more datasets. The experiments are performed on a 32-core instance for many-core experiments and on a cluster with 64 instances for distributed experiments. Our results show that A3Log outperforms other systems in many-core experiments and shows comparable performance with Maiter in distributed experiments. Our results also show that the asynchronous execution of A3Log can achieve 2.25X-222.82X speedup over the synchronous version for various datasets. (Sec. \ref{sec:expr})
-
-
-Besides, we analyze the aggregate and non-aggregate operations in Sec. \ref{sec:aggre}. We review the related works in Sec. \ref{sec:related}. We then conclude the paper in Sec. \ref{sec:conclusion}.
-
-
-
-%Computability theory proves that these recursive-only languages are Turing complete; they are as computationally powerful as Turing complete imperative languages, meaning they can solve the same kinds of problems as imperative languages even without iterative control structures such as “while” and “for”
-
-
-
-
-%our results show that... (Sec. \ref{sec:expr}). XXX outperforms state-of-the-art systems like BigDatalog \cite{Shkapsky:2016:BDA:2882903.2915229}, asynchronous Myria \cite{Wang:2015:AFR:2824032.2824052}, Socialite \cite{Seo:2013:DSD:2556549.2556572}, and all-in-one graph processing [SIGMOD 2017].
-
-
-
-
-
-
-
-
-\begin{comment}
-\emph{In the von Neumann model, state is captured in an ordered array of addresses, and computation is expressed via an ordered list of instructions. Traditional imperative programming grew out of these pervasive assumptions about order. Therefore, it is no surprise that popular imperative languages are a bad match to parallel and distributed platforms, which make few guarantees about order of execution and communication. By contrast, set-oriented approaches like SQL and batch dataflow approaches like MapReduce translate better to architectures with loose control over ordering.}
-
-Recursive queries with aggregation operation requires an execution order between recursions though no explicit order is required within recursion. This allows parallel execution within each recursion, but multiple synchronization steps are still needed between recursions.
-
-
-
-aggregation of real numbers or aggregation of key-value pairs (group-by-aggregation)
-
-\Paragraph{The Dilemma Between Consistency and Efficiency}
-Distributed programs face the dilemma between consistency and efficiency. A key problem in distributed programming is reasoning about the consistent behavior of a program in the face of temporal nondeterminism: the delay and re-ordering of messages and data across nodes.
-
-\Paragraph{Monotonic and Non-Monotonic Programs} \emph{Monotonic programs—e.g., programs expressible via selection, projection and join (even with recursion)—can be implemented by streaming algorithms that incrementally produce output elements as they receive input elements. The final order or contents of the input will never cause any earlier output to be “revoked” once it has been generated.1 Non-monotonic programs—e.g., those that contain aggregation or negation operations—can only be implemented correctly via blocking algorithms that do not produce any output until they have received all tuples in logical partitions of an input set. For example, aggregation queries need to receive entire “groups” before producing aggregates, which in general requires receiving the entire input set.}\cite{calm}
-
-\emph{CALM principle: the tight relationship between Consistency And Logical Monotonicity. Monotonic programs guarantee eventual consistency under any interleaving of delivery and computation. By contrast, non-monotonicity—the property that adding an element to an input set may revoke a previously valid element of an output set—requires coordination schemes that “wait” until inputs can be guaranteed to be complete.}\cite{calm}
-
-only eventual consistency is required in monotonic programs. easy to parallelize. for non-monotonic programs, especially with aggregation function, multiple coordination steps are required by using recursive aggregation functions.
-
-aggregation queries need to receive entire “groups” before producing aggregates, which in general requires receiving the entire input set. need to be implemented with coordination. limit parallelism and results in performance degradation.
-
-consistency guarantees correctness but impacts efficiency. to guarantee consistency, frequent coordination and synchronization ]/are required, which impacts performance. On the other hand, some systems pursue high efficiency with the cost of sacrificing accuracy, e.g. 45y555thy77666], GRACE.
-
-We will break down the consistency requirement due to recursive aggregations and allow the aggregation operations perform at any scale and at any time (Sec. \ref{sec:async}). That is, consistency is unnecessary. This attains the most parallel execution power. Does it means the most efficiency? No. Asynchrony breaks us out of limitations on fixed order. It gives us the flexibility on controlling the order of operations. But totally uncontrolled order results in nondeterminism on performance. By organizing the points of order, we will gain more. So, there is a balanced way between these two extremes (Sec. \ref{sec:order}).
-
-
-
-conditions for asynchronous execution:
-\begin{enumerate}
-  \item Monotonic form of operations
-  \item aggregation: Associativity and  Symmetry
-  \item aggregation and operation: Invariance
-\end{enumerate}
-
-In this paper, we study the recursive aggregation. Intuitively, aggregation operation leads to synchronization of all tuples to be aggregated, which requires coordinations of all involved workers. This impacts performance a lot. Examples...
-
-Out contributions:
-\begin{itemize}
-  \item We define a new \emph{delta monotonic aggregate} for recursive aggregations and propose a new recursive datalog semantics with this delta monotonic aggregate operations. We then illustrate its advantages on efficiency.
-  \item We provide the sufficient conditions for asynchronous evaluation of recursive aggregations. We also prove that the recursive datalog programs with asynchronous evaluation will converge to the same fixpoint as that with naive evaluation. We found that a broad class of typical queries and graph algorithms can benefit from asynchronous evaluation, including PageRank. We further provide a Datalog program checker and translator. It can automatically identify whether a Datalog query can be launched by asynchronous evaluation in terms of the above sufficient conditions. Furthermore, regarding potential Datalog program that fails to satisfy the conditions, the translator can automatically rewrite it in a new form that is eligible for asynchronous evaluation. Under the asynchronous evaluation, the aggregation operation of any set is eligible at any time. The organization of the evaluation order is crucial. We propose a scheduler and prove that by an optimal organization of the aggregation order it will approach to the fixpoint faster. The most effective aggregation operation is launched firstly.
-  \item We build a distributed system that supports Datalog queries with recursive aggregations. The system integrates all the techniques mentioned above. Our experimental results show that the system can achieve X times performance improvement comparing to synchronous evaluation plan and outperforms state-of-the-art systems like BigDatalog \cite{Shkapsky:2016:BDA:2882903.2915229}, asynchronous Myria \cite{Wang:2015:AFR:2824032.2824052}, Socialite \cite{Seo:2013:DSD:2556549.2556572}, and all-in-one graph processing [SIGMOD 2017].
-\end{itemize}
-\end{comment}
+In order to solve these problems，we design and implement a datalog system supporting asynchronous execution, A3LOG. Compared with previous works, our system is able to check whether an algorithm can be correctly asynchronized by a novel Sufficient condition and then choose the better execution model. Such that Asynchronous calculations needn’t to be used blindly. So the system can greatly reduce the workload of the programmer. In order to meet different use requirements, the system provides both  shared-memory runtime engine and distributed runtime engine. The contribution are summarized as follow 
